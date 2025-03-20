@@ -1,0 +1,50 @@
+{
+	"schemaVersion": 1,
+	"id": "wayfindr",
+	"version": "${version}",
+	"name": "wayfindr",
+	"description": "A minecraft waypoints mod. Not all who wander are lost but you certainly are, let's fix that.",
+	"authors": [
+		"dfnkt"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/caleywoods/wayfindr"
+	},
+	"license": "MIT",
+	"icon": "assets/wayfindr/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			{
+				"value": "net.dfnkt.wayfindr.Wayfindr",
+				"adapter": "kotlin"
+			}
+		],
+		"fabric-datagen": [
+			{
+				"value": "net.dfnkt.wayfindr.WayfindrDataGenerator",
+				"adapter": "kotlin"
+			}
+		],
+		"client": [
+			{
+				"value": "net.dfnkt.wayfindr.WayfindrModClient",
+				"adapter": "kotlin"
+			}
+		]
+	},
+	"mixins": [
+		"wayfindr.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.10",
+		"minecraft": "~1.21.4",
+		"java": ">=21",
+		"fabric-api": "*",
+		"fabric-language-kotlin": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
