@@ -12,3 +12,4 @@ Right now, not a whole heck of a lot honestly. My plan for features is:
 * A rendering system allowing light beams to be rendered if desired, per waypoint using Fabric `BufferBuilder` and hooks
 * A custom settings UI where the user can add, delete, or change the properties of a waypoint
 * Stretch feature: The ability to mark a waypoint as your current destination and have an on-screen arrow pointing towards it or a hotkey that when held/toggled will show the arrow
+* Stretch feature: Using Fabric global world data to optionally store/sync waypoints to multiple clients
