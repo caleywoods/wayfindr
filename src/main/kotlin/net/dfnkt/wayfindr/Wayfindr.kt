@@ -1,12 +1,13 @@
 package net.dfnkt.wayfindr
 
+import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.StringArgumentType
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
-import net.minecraft.server.command.CommandManager.argument
+import net.minecraft.server.command.CommandManager
 import org.slf4j.LoggerFactory
-import net.minecraft.server.command.CommandManager.literal;
 import net.minecraft.text.Text
+import net.minecraft.util.math.Vec3d
 
 object Wayfindr : ModInitializer {
     const val MOD_ID = "wayfindr";
@@ -16,29 +17,34 @@ object Wayfindr : ModInitializer {
         logger.info("Thanks for using the Wayfindr mod. Enjoy.")
 
         // @TODO: These should probably be moved to a Commands class for the mod but for now it can live here
-		CommandRegistrationCallback.EVENT.register { dispatcher, registryAccess, environment ->
+		CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
 			dispatcher.register(
 				// @TODO: This should write a new entry to our waypoints JSON file
-				literal("waypoint")
+				CommandManager.literal("waypoint")
 					.then(
-						literal("add")
+						CommandManager.literal("add")
 							.then(
-								argument("name", StringArgumentType.string())
+								CommandManager.argument("name", StringArgumentType.string())
 									.executes { context ->
-										val name = StringArgumentType.getString(context, "name");
+										val player = context.source.player
+											?: return@executes 0
+										val name = StringArgumentType.getString(context, "name")
+										val position = Vec3d(player.x, player.y + 10, player.z)
+
+										val waypoint = WaypointManager.addWaypoint(name, position)
 										// @TODO: These strings should be defined in the lang folder so we have localization
 										context.source.sendFeedback(
-											{ Text.literal("Wayfindr: waypoint \"$name\" was added") },
+											{ Text.literal("Added waypoint '$name' at ${position.x.toInt()}, ${position.y.toInt()}, ${position.z.toInt()}") },
 											false
 										)
-										1;
+										return@executes 1
 									}
 							),
 					)
 					.then(
-						literal("delete")
+						CommandManager.literal("delete")
 						.then(
-							argument("name", StringArgumentType.string())
+							CommandManager.argument("name", StringArgumentType.string())
 								.executes { context ->
 									val name = StringArgumentType.getString(context, "name");
 									// @TODO: These strings should be defined in the lang folder so we have localization
