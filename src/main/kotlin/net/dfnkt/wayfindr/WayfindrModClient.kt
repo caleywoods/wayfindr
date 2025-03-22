@@ -10,12 +10,19 @@ import net.minecraft.client.gl.ShaderProgramKeys
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.util.math.Vec3d
 import com.mojang.blaze3d.systems.RenderSystem
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
+import net.minecraft.client.MinecraftClient
 
 class WayfindrModClient : ClientModInitializer {
     // Test waypoint at coordinates (0, 95, 0), adjust if you need it higher or lower
     private val testWaypoint = Vec3d(0.0, 95.0, 0.0)
 
     override fun onInitializeClient() {
+        val client = MinecraftClient.getInstance();
+        HudRenderCallback.EVENT.register {drawContext, _ ->
+            // This could eventually show the waypoint name above the point
+            drawContext.drawText(client.textRenderer, "Example test", 100, 200, 0xFFFFFFFFu.toInt(), true);
+        }
         // Register our render event
         WorldRenderEvents.AFTER_TRANSLUCENT.register { context ->
             val matrixStack = context.matrixStack() ?: return@register
@@ -26,6 +33,7 @@ class WayfindrModClient : ClientModInitializer {
             if (distance <= 100) {
                 renderWaypointMarker(matrixStack, testWaypoint, player)
             }
+
         }
     }
 
