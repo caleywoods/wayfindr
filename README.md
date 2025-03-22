@@ -4,7 +4,7 @@
 A minecraft waypoints mod. Creating a mod has been on my to-do list for quite awhile so this project was created to finally fulfill that. It's written in Kotlin and targets the [Fabric mod ecosystem](https://fabricmc.net/).
 
 ### What's it do?
-Right now, it creates a red cube at 0, 95, 0 (likely in the sky near your spawn point) and responds to `/waypoint add <name>` and `/waypoint delete <name>` with text. My plan for features is:
+Right now, `/waypoint add <name>` creates a red cube at the player position (plus 10 y for visibility) and `/waypoint delete <name>` with responds with some text for now. My plan for features is:
 
 * A command syntax like `/waypoint add <name> [color]` and `/waypoint delete <name>`
 * Storing waypoints in a JSON file (see example below)
