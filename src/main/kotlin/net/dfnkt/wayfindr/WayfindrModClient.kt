@@ -15,7 +15,7 @@ class WayfindrModClient : ClientModInitializer {
         val client = MinecraftClient.getInstance();
         HudRenderCallback.EVENT.register {drawContext, _ ->
             // This could eventually show the waypoint name above the point
-            drawContext.drawText(client.textRenderer, "sick bass dude", 100, 200, 0xFFFFFFFFu.toInt(), true);
+            drawContext.drawText(client.textRenderer, "Wayfinder mod demo", 100, 200, 0xFFFFFFFFu.toInt(), true);
         }
         // Register our render event
         WorldRenderEvents.AFTER_TRANSLUCENT.register { context ->

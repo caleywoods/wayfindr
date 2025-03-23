@@ -31,7 +31,11 @@ class WayfindrRenderer {
             val red = ((color shr 16) and 0xFF) / 255f
             val green = ((color shr 8) and 0xFF) / 255f
             val blue = (color and 0xFF) / 255f
-            val alpha = 0.8f
+            val alpha = 0.7f
+
+            val beamWidth = 0.2f  // Width of the beam (X and Z axes)
+            val beamHeight = 50f  // Height of the beam (Y axis)
+            val baseSize = 0.5f   // Size of the base cube
 
             // Set up rendering state
             RenderSystem.enableBlend()
@@ -44,6 +48,12 @@ class WayfindrRenderer {
             val tessellator = Tessellator.getInstance()
             // Create a new BufferBuilder with the tessellator's allocator
             val bufferBuilder = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR)
+
+            // center the beam horizontally at the waypoint position
+            matrices.translate(-baseSize/2, 0f, -baseSize/2)
+
+            // Scale to create a tall and thin beam
+            matrices.scale(beamWidth, beamHeight, beamWidth)
 
             val matrix = matrices.peek().positionMatrix
 

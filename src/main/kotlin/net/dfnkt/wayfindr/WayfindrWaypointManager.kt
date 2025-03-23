@@ -18,6 +18,12 @@ object WaypointManager {
         return waypoint
     }
 
+    fun addWaypoint(name: String, position: Vec3d, color: Int) : Waypoint {
+        val waypoint = Waypoint(name, position, color)
+        waypoints.add(waypoint)
+        return waypoint
+    }
+
     fun removeWaypoint(name: String): Boolean {
         return waypoints.removeIf { it.name == name }
     }
