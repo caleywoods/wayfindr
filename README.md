@@ -8,8 +8,8 @@ Right now you can:
 
 * `/waypoint add <name> [<color>]` to create a colored marker at the player position
 * `/waypoint delete <name>` to remove a named waypoint
-* 
-* My plan for features is:
+
+My plan for features is:
 
 * Storing waypoints in a JSON file (currently just stored per session)
 * A custom settings UI where the user can add, delete, or change the properties of a waypoint
