@@ -23,11 +23,11 @@ class WayfindrModClient : ClientModInitializer {
             val player = context.camera().pos
 
             for (waypoint in WaypointManager.waypoints) {
-                val distance = player.distanceTo(waypoint.position)
+                val distance = player.distanceTo(waypoint.position.toVec3d())
 
                 // Only render if player is within 100 blocks
                 if (distance <= 100) {
-                    renderWaypointMarker(matrixStack, waypoint.position, player, waypoint.color)
+                    renderWaypointMarker(matrixStack, waypoint.position.toVec3d(), player, waypoint.color)
                 }
             }
         }
