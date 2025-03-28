@@ -1,6 +1,6 @@
 ## Wayfindr
 
-![A desaturated purple and white lighthouse with two beams shining out. The foundation is stepped and stylized like minecraft voxel blocks.](https://github.com/caleywoods/wayfindr/blob/main/wayfindr_logo.png?raw=true)
+<img src="https://github.com/caleywoods/wayfindr/blob/main/wayfindr_logo.png?raw=true" align="left" width="100" />
 
 ### What's this?
 A minecraft waypoints mod. Creating a mod has been on my to-do list for quite awhile so this project was created to finally fulfill that. It's written in Kotlin and targets the [Fabric mod ecosystem](https://fabricmc.net/).
