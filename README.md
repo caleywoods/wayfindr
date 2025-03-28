@@ -1,11 +1,9 @@
 ## Wayfindr
 
-<img src="https://github.com/caleywoods/wayfindr/blob/main/wayfindr_logo.png?raw=true" width="275" />
+<img src="https://github.com/caleywoods/wayfindr/blob/main/wayfindr_logo.png?raw=true" width="350" />
 
 ### What's this?
 A minecraft waypoints mod. Creating a mod has been on my to-do list for quite awhile so this project was created to finally fulfill that. It's written in Kotlin and targets the [Fabric mod ecosystem](https://fabricmc.net/).
-
-<br />
 
 ### What's it do?
 Right now you can:
