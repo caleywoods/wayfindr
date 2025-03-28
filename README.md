@@ -5,7 +5,7 @@
 ### What's this?
 A minecraft waypoints mod. Creating a mod has been on my to-do list for quite awhile so this project was created to finally fulfill that. It's written in Kotlin and targets the [Fabric mod ecosystem](https://fabricmc.net/).
 
-
+<br />
 ### What's it do?
 Right now you can:
 
