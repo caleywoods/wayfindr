@@ -7,7 +7,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
 import net.minecraft.client.MinecraftClient
 import net.dfnkt.wayfindr.WayfindrRenderer.Companion.renderWaypointMarker
 
-class WayfindrModClient : ClientModInitializer {
+object WayfindrModClient : ClientModInitializer {
     // Test waypoint at coordinates (0, 95, 0), adjust if you need it higher or lower
     private val testWaypoint = Vec3d(0.0, 95.0, 0.0)
 

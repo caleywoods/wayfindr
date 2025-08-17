@@ -17,29 +17,45 @@ object Wayfindr : ModInitializer {
 	override fun onInitialize() {
 		logger.info("Thanks for using the Wayfindr mod. Enjoy.")
 
+		WaypointManager.initializeWaypoints()
+
 		// @TODO: These should probably be moved to a Commands class for the mod but for now it can live here
 		CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
 			dispatcher.register(
-				// @TODO: This should write a new entry to our waypoints JSON file
 				CommandManager.literal("waypoint")
 					.then(
 						CommandManager.literal("add")
 							.then(
 								CommandManager.argument("name", StringArgumentType.string())
 									.executes { context ->
-
-										handleAddWaypoint(context, null)
+										handleAddWaypoint(context, null, false)
 									}
 									.then(
 										CommandManager.argument("color", StringArgumentType.word())
 											.executes { context ->
 												val colorArg = StringArgumentType.getString(context, "color")
 												val color = parseColor(colorArg)
-
-												handleAddWaypoint(context, color)
+												handleAddWaypoint(context, color, false)
 											}
 									)
-							),
+							)
+					)
+					.then(
+						CommandManager.literal("addhere")
+							.then(
+								CommandManager.argument("name", StringArgumentType.string())
+									.executes { context ->
+										handleAddWaypoint(context, null, true)
+									}
+									.then(
+										CommandManager.argument("color", StringArgumentType.word())
+											.executes { context ->
+												val colorArg = StringArgumentType.getString(context, "color")
+												val color = parseColor(colorArg)
+												handleAddWaypoint(context, color, true)
+											}
+									)
+							)
 					)
 					.then(
 						CommandManager.literal("delete")
@@ -49,7 +65,6 @@ object Wayfindr : ModInitializer {
 										val name = StringArgumentType.getString(context, "name");
 
 										WaypointManager.removeWaypoint(name)
-										// @TODO: These strings should be defined in the lang folder so we have localization
 										context.source.sendFeedback(
 											{ Text.literal("Removed waypoint '$name'") },
 											false
@@ -64,22 +79,31 @@ object Wayfindr : ModInitializer {
 
 	}
 
-	private fun handleAddWaypoint(context: CommandContext<ServerCommandSource>, colorInt: Int?): Int {
+	private fun handleAddWaypoint(context: CommandContext<ServerCommandSource>, colorInt: Int?, usePlayerPosition: Boolean): Int {
 		val player = context.source.player
 			?: return 0 // Exit early if no player
 
 		val name = StringArgumentType.getString(context, "name")
-		val position = Vec3d(player.x, player.y, player.z)
+		
+		// Determine position based on placement mode
+		val position = if (usePlayerPosition) {
+			// Place at player's exact position
+			Vec3d(player.x, player.y, player.z)
+		} else {
+			// Place at crosshair target location
+			WayfindrRaycast.getRaycastPosition(player)
+		}
 
 		// Use provided color or default
 		val finalColor = colorInt ?: 0xFF0000 // Default red
 
 		// Add waypoint to the manager
-		val waypoint = WaypointManager.addWaypoint(name, position, finalColor)
+		WaypointManager.addWaypoint(name, position, finalColor)
 
-		// Feedback to player
+		// Feedback to player with placement mode info
+		val placementMode = if (usePlayerPosition) "at your location" else "at crosshair target"
 		context.source.sendFeedback({
-			Text.literal("Added waypoint '$name' at ${position.x.toInt()}, ${position.y.toInt()}, ${position.z.toInt()}")
+			Text.literal("Added waypoint '$name' $placementMode at ${position.x.toInt()}, ${position.y.toInt()}, ${position.z.toInt()}")
 		}, false)
 
 		return 1
@@ -96,7 +120,6 @@ object Wayfindr : ModInitializer {
 			"white" -> 0xFFFFFF
 			"black" -> 0x000000
 			else -> {
-				// Try to parse hex color code if it starts with #
 				if (colorArg.startsWith("#")) {
 					try {
 						return colorArg.substring(1).toInt(16)

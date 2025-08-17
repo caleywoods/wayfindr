@@ -53,20 +53,28 @@ object WaypointManager {
     }
 
     fun removeWaypoint(name: String): Boolean {
-        return waypoints.removeIf { it.name == name }
+        val removed = waypoints.removeIf { it.name == name }
+        if (removed) {
+            val saveManager = WayfindrSaveFileHandler()
+            saveManager.saveAllWaypoints(waypoints)
+        }
+        return removed
     }
 
     fun getWaypoint(name: String): Waypoint? {
         return waypoints.find { it.name == name }
     }
 
-    // Add method to load waypoints
-    fun loadWaypoints(jsonString: String) {
-        try {
-            val loadedWaypoint = Json.decodeFromString<Waypoint>(jsonString)
-            waypoints.add(loadedWaypoint)
-        } catch (e: Exception) {
-            println("Error loading waypoint: ${e.message}")
-        }
+    fun initializeWaypoints() {
+        val saveManager = WayfindrSaveFileHandler()
+        val savedWaypoints = saveManager.loadWaypoints()
+        waypoints.clear()
+        waypoints.addAll(savedWaypoints)
+        println("Loaded ${savedWaypoints.size} waypoints from save file")
+    }
+
+    fun loadWaypoints(waypointList: List<Waypoint>) {
+        waypoints.clear()
+        waypoints.addAll(waypointList)
     }
 }
