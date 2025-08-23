@@ -1,9 +1,9 @@
 ## Wayfindr
 
+A Minecraft waypoints mod written in Kotlin targeting the [Fabric mod ecosystem](https://fabricmc.net/). Wayfindr allows you to create and manage waypoints throughout your Minecraft world.
+
 <img src="https://github.com/caleywoods/wayfindr/blob/main/wayfindr_logo.png?raw=true" width="350" />
 
-## What's this?
-A Minecraft waypoints mod written in Kotlin targeting the [Fabric mod ecosystem](https://fabricmc.net/). Wayfindr allows you to create and manage waypoints throughout your Minecraft world.
 
 ## Screenshots
 
