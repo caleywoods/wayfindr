@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper
 import net.minecraft.client.option.KeyBinding
 import net.minecraft.client.util.InputUtil
 import org.lwjgl.glfw.GLFW
+import kotlin.random.Random
 
 object WayfindrModClient : ClientModInitializer {
 
@@ -49,7 +50,7 @@ object WayfindrModClient : ClientModInitializer {
                 val distance = player.distanceTo(waypoint.position.toVec3d())
 
                 if (distance <= 100) {
-                    renderWaypointMarker(matrixStack, waypoint.position.toVec3d(), player, waypoint.color)
+                    renderWaypointMarker(matrixStack, waypoint.position.toVec3d(), player, waypoint.color, waypoint.name)
                 }
             }
         }
@@ -64,10 +65,21 @@ object WayfindrModClient : ClientModInitializer {
                 if (player != null) {
                     val waypointName = "Quick Waypoint ${WaypointManager.waypoints.size + 1}"
                     val position = WayfindrRaycast.getRaycastPosition(player)
-                    WaypointManager.addWaypoint(waypointName, position, 0xFF0000)
+                    
+                    val randomColor = generateRandomColor()
+                    
+                    WaypointManager.addWaypoint(waypointName, position, randomColor)
                     player.sendMessage(Text.literal("Quick waypoint added at crosshair target!"), false)
                 }
             }
         }
+    }
+    
+    private fun generateRandomColor(): Int {
+        val red = Random.nextInt(100, 256)
+        val green = Random.nextInt(100, 256)
+        val blue = Random.nextInt(100, 256)
+        
+        return (red shl 16) or (green shl 8) or blue
     }
 }
