@@ -10,12 +10,13 @@ Right now you can:
 
 * `/waypoint add <name> [<color>]` to create a colored marker at the player position
 * `/waypoint delete <name>` to remove a named waypoint
+* Press "n" to quick add a waypoint of a random color at the crosshair location
+* Press "m" to open the waypoints manager allowing you delete waypoints
 
 Waypoints are stored in `C:\Users\{username}\.minecraft\config\wayfindr\waypoints.json` (not sure yet on other OS's)
 
 My plan for features is:
 
-* A custom settings UI where the user can add, delete, or change the properties of a waypoint
 * Stretch feature: The ability to mark a waypoint as your current destination and have an on-screen arrow pointing towards it or a hotkey that when held/toggled will show the arrow
 * Stretch feature: Treat a selected group of waypoints as a graph of connected nodes and determine the fastest route to visit each waypoint, aka the travelling salesman problem
 * Stretch feature: Using Fabric global world data to optionally store/sync waypoints to multiple clients
