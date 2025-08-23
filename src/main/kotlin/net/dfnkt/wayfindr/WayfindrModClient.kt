@@ -49,7 +49,7 @@ object WayfindrModClient : ClientModInitializer {
             for (waypoint in WaypointManager.waypoints) {
                 val distance = player.distanceTo(waypoint.position.toVec3d())
 
-                if (distance <= 100) {
+                if (distance <= 200) {
                     renderWaypointMarker(matrixStack, waypoint.position.toVec3d(), player, waypoint.color, waypoint.name)
                 }
             }
