@@ -1,20 +1,25 @@
-## Wayfindr
-
-A Minecraft waypoints mod written in Kotlin targeting the [Fabric mod ecosystem](https://fabricmc.net/). Wayfindr allows you to create and manage waypoints throughout your Minecraft world.
-
-<img src="https://github.com/caleywoods/wayfindr/blob/main/wayfindr_logo.png?raw=true" width="350" />
-
+<!-- LOGO -->
+<h1>
+<p align="center">
+  <img src="https://github.com/caleywoods/wayfindr/blob/main/wayfindr_logo.png?raw=true" alt="Logo" width="350">
+  <br>Wayfindr
+</h1>
+<p align="center">
+  A Minecraft waypoints mod written in Kotlin targeting the <a href="https://fabricmc.net/">Fabric mod ecosystem</a>.
+  <br>
+  Create and manage waypoints throughout your Minecraft world.
+</p>
 
 ## Screenshots
 
 ### Waypoints in the World
-![Waypoints in the world](screenshots/Waypoints.png)
+![Waypoints in the world](https://github.com/caleywoods/wayfindr/blob/main/screenshots/Waypoints.png?raw=true)
 
 ### Waypoint Manager
-![Waypoint manager interface](screenshots/Waypoint%20manager.png)
+![Waypoint manager interface](https://github.com/caleywoods/wayfindr/blob/main/screenshots/Waypoint%20manager.png?raw=true)
 
 ### Configuration Screen
-![Configuration options](screenshots/Config.png)
+![Configuration options](https://github.com/caleywoods/wayfindr/blob/main/screenshots/Config.png?raw=true)
 
 ## Features
 * Create colored waypoints at your current position or at your crosshair location
