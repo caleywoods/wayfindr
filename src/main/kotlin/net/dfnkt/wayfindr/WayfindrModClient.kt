@@ -13,28 +13,43 @@ import net.minecraft.client.option.KeyBinding
 import net.minecraft.client.util.InputUtil
 import org.lwjgl.glfw.GLFW
 import kotlin.random.Random
+import org.slf4j.LoggerFactory
 
 object WayfindrModClient : ClientModInitializer {
 
-    private val openWaypointMenu = KeyBindingHelper.registerKeyBinding(
-        KeyBinding(
-            "key.wayfindr.open_menu",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_M,
-            "category.wayfindr.general"
-        )
-    )
+    private lateinit var openWaypointMenu: KeyBinding
+    private lateinit var quickAddWaypoint: KeyBinding
     
-    private val quickAddWaypoint = KeyBindingHelper.registerKeyBinding(
-        KeyBinding(
-            "key.wayfindr.quick_add",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_N,
-            "category.wayfindr.general"
+    private fun registerKeybindings() {
+        val config = WayfindrConfig.get()
+        
+        openWaypointMenu = KeyBindingHelper.registerKeyBinding(
+            KeyBinding(
+                "key.wayfindr.open_menu",
+                InputUtil.Type.KEYSYM,
+                config.openMenuKey,
+                "category.wayfindr.general"
+            )
         )
-    )
+        
+        quickAddWaypoint = KeyBindingHelper.registerKeyBinding(
+            KeyBinding(
+                "key.wayfindr.quick_add",
+                InputUtil.Type.KEYSYM,
+                config.quickAddKey,
+                "category.wayfindr.general"
+            )
+        )
+    }
+    
+    // Since we can't update keybindings at runtime in Fabric, we'll remove this method
+    // The notification is now handled directly in WayfindrConfig.update()
 
     override fun onInitializeClient() {
+        WayfindrConfig.load()
+        
+        registerKeybindings()
+        
         WaypointManager.initializeWaypoints()
         
         val client = MinecraftClient.getInstance();
@@ -45,12 +60,22 @@ object WayfindrModClient : ClientModInitializer {
         WorldRenderEvents.AFTER_TRANSLUCENT.register { context ->
             val matrixStack = context.matrixStack() ?: return@register
             val player = context.camera().pos
-
+            val config = WayfindrConfig.get()
+            
+            // Debug message to check config values
+            val debugPlayer = MinecraftClient.getInstance().player
+            
             for (waypoint in WaypointManager.waypoints) {
                 val distance = player.distanceTo(waypoint.position.toVec3d())
+                
+                // Show debug info occasionally
+                if (debugPlayer != null && debugPlayer.age % 100 == 0 && WaypointManager.waypoints.isNotEmpty()) {
+                    debugPlayer.sendMessage(Text.literal("\u00a76[Debug] Max render distance: ${config.maxRenderDistance}, Current distance: $distance"), true)
+                }
 
-                if (distance <= 200) {
-                    renderWaypointMarker(matrixStack, waypoint.position.toVec3d(), player, waypoint.color, waypoint.name)
+                // Only render waypoints within configured distance
+                if (distance <= config.maxRenderDistance) {
+                    WayfindrRenderer.renderWaypointMarker(matrixStack, waypoint.position.toVec3d(), player, waypoint.color, waypoint.name)
                 }
             }
         }
@@ -69,7 +94,6 @@ object WayfindrModClient : ClientModInitializer {
                     val randomColor = generateRandomColor()
                     
                     WaypointManager.addWaypoint(waypointName, position, randomColor)
-                    player.sendMessage(Text.literal("Quick waypoint added at crosshair target!"), false)
                 }
             }
         }

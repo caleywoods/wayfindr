@@ -63,16 +63,11 @@ object WaypointManager {
     }
 
     fun initializeWaypoints() {
-        println("[Wayfindr] Starting to initialize waypoints")
         val saveManager = WayfindrSaveFileHandler()
         val savedWaypoints = saveManager.loadWaypoints()
         waypoints.clear()
         waypoints.addAll(savedWaypoints)
         println("[Wayfindr] Loaded ${savedWaypoints.size} waypoints from save file")
-        
-        savedWaypoints.forEach { waypoint ->
-            println("[Wayfindr] Loaded waypoint: ${waypoint.name} at ${waypoint.position.x}, ${waypoint.position.y}, ${waypoint.position.z}")
-        }
     }
 
     fun loadWaypoints(waypointList: List<Waypoint>) {

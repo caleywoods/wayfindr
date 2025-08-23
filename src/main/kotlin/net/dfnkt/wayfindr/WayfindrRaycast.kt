@@ -11,10 +11,10 @@ object WayfindrRaycast {
     /**
      * Performs a raycast from the player's eye position in the direction they're looking
      * @param player The player to raycast from
-     * @param maxDistance Maximum distance to raycast (default 100 blocks)
+     * @param maxDistance Maximum distance to raycast (uses config value by default)
      * @return The position where the raycast hits, or a position in front of the player if no hit
      */
-    fun getRaycastPosition(player: PlayerEntity, maxDistance: Double = 200.0): Vec3d {
+    fun getRaycastPosition(player: PlayerEntity, maxDistance: Double = WayfindrConfig.get().maxRaycastDistance): Vec3d {
         val eyePos = player.eyePos
         val lookDirection = player.rotationVector
         val endPos = eyePos.add(lookDirection.multiply(maxDistance))

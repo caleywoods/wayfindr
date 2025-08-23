@@ -140,31 +140,35 @@ class WayfindrRenderer {
             matrices.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Y.rotationDegrees(yaw))
             matrices.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_X.rotationDegrees(pitch))
             
-            val baseScale = 0.025f
+            // Increase text scale for better visibility at distance
+            val baseScale = 0.05f  // Increased base scale for better visibility
+            val minScale = 0.05f   // Increased minimum scale
+            val maxScale = 0.25f   // Increased maximum scale
             
-            val minScale = 0.025f
-            val maxScale = 0.12f
-            
-            val scaleFactor = Math.sqrt(distance / 5.0).coerceIn(1.0, 6.0)
-            
+            // Adjusted scale formula to make text larger at greater distances
+            val scaleFactor = Math.sqrt(distance / 3.0).coerceIn(1.0, 8.0)
             val dynamicScale = (baseScale * scaleFactor).toFloat().coerceIn(minScale, maxScale)
             
             matrices.scale(-dynamicScale, -dynamicScale, dynamicScale)
             
             val textWidth = textRenderer.getWidth(waypointName)
-            
             val matrix4f = matrices.peek().positionMatrix
             
+            // Draw text with shadow for better visibility
+            // Use a semi-transparent background
+            val bgColor = 0x80000000.toInt() // Semi-transparent black
+            
+            // Draw the text with shadow
             textRenderer.draw(
                 waypointName,
                 -textWidth / 2f,
                 0f,
-                0xFFFFFF,
-                true,
+                0xFFFFFF, // Bright white text
+                true, // With shadow for better visibility
                 matrix4f,
                 client.bufferBuilders.entityVertexConsumers,
                 net.minecraft.client.font.TextRenderer.TextLayerType.SEE_THROUGH,
-                0,
+                bgColor,
                 15728880
             )
             

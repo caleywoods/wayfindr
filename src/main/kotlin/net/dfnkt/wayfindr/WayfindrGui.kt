@@ -21,8 +21,16 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         refreshWaypointList(waypointListY)
         
         addDrawableChild(
+            ButtonWidget.builder(Text.literal("Settings")) { 
+                client?.setScreen(WayfindrConfigScreen(this))
+            }
+                .dimensions(centerX - 100, height - 40, 95, 20)
+                .build()
+        )
+        
+        addDrawableChild(
             ButtonWidget.builder(Text.literal("Close")) { close() }
-                .dimensions(centerX - 50, height - 40, 100, 20)
+                .dimensions(centerX + 5, height - 40, 95, 20)
                 .build()
         )
     }
@@ -56,8 +64,6 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         val visibleCount = minOf(maxVisibleWaypoints, WaypointManager.waypoints.size)
         val endIndex = minOf(WaypointManager.waypoints.size, scrollOffset + visibleCount)
         val startIndex = minOf(scrollOffset, WaypointManager.waypoints.size - visibleCount)
-        
-        println("[Wayfindr] Displaying waypoints from index $startIndex to $endIndex")
         
         val visibleWaypoints = if (WaypointManager.waypoints.size > startIndex) {
             WaypointManager.waypoints.subList(startIndex, endIndex)
