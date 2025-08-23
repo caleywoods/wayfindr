@@ -15,7 +15,6 @@ import org.lwjgl.glfw.GLFW
 
 object WayfindrModClient : ClientModInitializer {
 
-    // Register keybinds at class level to ensure early initialization
     private val openWaypointMenu = KeyBindingHelper.registerKeyBinding(
         KeyBinding(
             "key.wayfindr.open_menu",
@@ -35,13 +34,13 @@ object WayfindrModClient : ClientModInitializer {
     )
 
     override fun onInitializeClient() {
+        WaypointManager.initializeWaypoints()
+        
         val client = MinecraftClient.getInstance();
         HudRenderCallback.EVENT.register {drawContext, _ ->
-            // This could eventually show the waypoint name above the point
             drawContext.drawText(client.textRenderer, "Wayfinder mod demo", 100, 200, 0xFFFFFFFFu.toInt(), true);
         }
         
-        // Register our render event
         WorldRenderEvents.AFTER_TRANSLUCENT.register { context ->
             val matrixStack = context.matrixStack() ?: return@register
             val player = context.camera().pos
@@ -49,14 +48,12 @@ object WayfindrModClient : ClientModInitializer {
             for (waypoint in WaypointManager.waypoints) {
                 val distance = player.distanceTo(waypoint.position.toVec3d())
 
-                // Only render if player is within 100 blocks
                 if (distance <= 100) {
                     renderWaypointMarker(matrixStack, waypoint.position.toVec3d(), player, waypoint.color)
                 }
             }
         }
         
-        // Register keybind handling using locally registered keybinds
         ClientTickEvents.END_CLIENT_TICK.register { mcClient ->
             while (openWaypointMenu.wasPressed()) {
                 mcClient.setScreen(WayfindrGui())

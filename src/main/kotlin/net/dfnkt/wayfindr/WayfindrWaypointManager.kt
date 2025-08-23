@@ -4,7 +4,6 @@ import net.minecraft.util.math.Vec3d
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-// Wrapper class for Vec3d serialization
 @Serializable
 data class SerializableVec3d(val x: Double, val y: Double, val z: Double) {
     constructor(vec3d: Vec3d) : this(vec3d.x, vec3d.y, vec3d.z)
@@ -20,15 +19,13 @@ object WaypointManager {
     @Serializable
     data class Waypoint(
         val name: String,
-        val position: SerializableVec3d, // Changed from Vec3d to SerializableVec3d
+        val position: SerializableVec3d,
         val color: Int = 0xFF0000u.toInt(),
         val dimension: String = "minecraft:overworld",
     ) {
-        // Constructor that accepts Vec3d
         constructor(name: String, position: Vec3d, color: Int = 0xFF0000u.toInt(), dimension: String = "minecraft:overworld") :
                 this(name, SerializableVec3d(position), color, dimension)
 
-        // Helper method to get the original Vec3d
         fun getPosition(): Vec3d {
             return position.toVec3d()
         }
@@ -66,11 +63,16 @@ object WaypointManager {
     }
 
     fun initializeWaypoints() {
+        println("[Wayfindr] Starting to initialize waypoints")
         val saveManager = WayfindrSaveFileHandler()
         val savedWaypoints = saveManager.loadWaypoints()
         waypoints.clear()
         waypoints.addAll(savedWaypoints)
-        println("Loaded ${savedWaypoints.size} waypoints from save file")
+        println("[Wayfindr] Loaded ${savedWaypoints.size} waypoints from save file")
+        
+        savedWaypoints.forEach { waypoint ->
+            println("[Wayfindr] Loaded waypoint: ${waypoint.name} at ${waypoint.position.x}, ${waypoint.position.y}, ${waypoint.position.z}")
+        }
     }
 
     fun loadWaypoints(waypointList: List<Waypoint>) {
