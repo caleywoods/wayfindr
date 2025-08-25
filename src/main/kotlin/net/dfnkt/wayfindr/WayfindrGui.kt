@@ -88,14 +88,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         val listAreaHeight = height - startY - 60
         val maxVisibleWaypoints = maxOf(5, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
         
-        // Filter waypoints based on search text
-        val filteredWaypoints = if (this::searchBox.isInitialized && searchBox.text.isNotEmpty()) {
-            WaypointManager.waypoints.filter { 
-                it.name.lowercase(Locale.getDefault()).contains(searchBox.text.lowercase(Locale.getDefault())) 
-            }
-        } else {
-            WaypointManager.waypoints
-        }
+        val filteredWaypoints = getFilteredWaypoints()
         
         if (filteredWaypoints.isEmpty()) {
             val noWaypointsButton = ButtonWidget.builder(Text.literal("No waypoints found")) {}
@@ -244,14 +237,14 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         if (client.player?.abilities?.creativeMode == true) {
             val teleportButton = ButtonWidget.builder(Text.literal("Teleport")) {
                 val pos = waypoint.getPosition()
-                // client.player?.teleport(pos.x, pos.y, pos.z)
+                val command = "tp ${pos.x.toInt()} ${pos.y.toInt()} ${pos.z.toInt()}"
+                client.networkHandler?.sendChatCommand(command)
             }
                 .dimensions(rightPaneX + 10, RIGHT_PANE_Y + 100, paneWidth - 20, BUTTON_HEIGHT)
                 .build()
             addDrawableChild(teleportButton)
         }
         
-        // Delete button
         val deleteButton = ButtonWidget.builder(Text.literal("Delete Waypoint")) {
             WaypointManager.removeWaypoint(waypoint.name)
             selectedWaypoint = null
@@ -269,14 +262,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         // Draw divider line
         context.fill(paneWidth, 0, paneWidth + 1, height, 0xFFAAAAAA.toInt())
         
-        // Get filtered waypoints for rendering
-        val filteredWaypoints = if (this::searchBox.isInitialized && searchBox.text.isNotEmpty()) {
-            WaypointManager.waypoints.filter { 
-                it.name.lowercase(Locale.getDefault()).contains(searchBox.text.lowercase(Locale.getDefault())) 
-            }
-        } else {
-            WaypointManager.waypoints
-        }
+        val filteredWaypoints = getFilteredWaypoints()
         
         super.render(context, mouseX, mouseY, delta)
         
@@ -312,14 +298,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
     }
     
     private fun getWaypointNameFromPosition(y: Int): String {
-        // Calculate the visible waypoints based on current filters and scroll position
-        val filteredWaypoints = if (this::searchBox.isInitialized && searchBox.text.isNotEmpty()) {
-            WaypointManager.waypoints.filter { 
-                it.name.lowercase(Locale.getDefault()).contains(searchBox.text.lowercase(Locale.getDefault())) 
-            }
-        } else {
-            WaypointManager.waypoints
-        }
+        val filteredWaypoints = getFilteredWaypoints()
         
         if (filteredWaypoints.isEmpty()) return ""
         
@@ -367,4 +346,14 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
     }
     
     override fun shouldPause(): Boolean = false
+    
+    private fun getFilteredWaypoints(): List<WaypointManager.Waypoint> {
+        return if (this::searchBox.isInitialized && searchBox.text.isNotEmpty()) {
+            WaypointManager.waypoints.filter { 
+                it.name.lowercase(Locale.getDefault()).contains(searchBox.text.lowercase(Locale.getDefault())) 
+            }
+        } else {
+            WaypointManager.waypoints
+        }
+    }
 }

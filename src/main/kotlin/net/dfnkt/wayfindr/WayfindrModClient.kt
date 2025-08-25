@@ -3,7 +3,6 @@ package net.dfnkt.wayfindr
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents
 import net.minecraft.util.math.Vec3d
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
 import net.minecraft.client.MinecraftClient
 import net.dfnkt.wayfindr.WayfindrRenderer.Companion.renderWaypointMarker
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
@@ -42,9 +41,6 @@ object WayfindrModClient : ClientModInitializer {
         )
     }
     
-    // Since we can't update keybindings at runtime in Fabric, we'll remove this method
-    // The notification is now handled directly in WayfindrConfig.update()
-
     override fun onInitializeClient() {
         WayfindrConfig.load()
         
@@ -52,27 +48,16 @@ object WayfindrModClient : ClientModInitializer {
         
         WaypointManager.initializeWaypoints()
         
-        val client = MinecraftClient.getInstance();
-        HudRenderCallback.EVENT.register {drawContext, _ ->
-            drawContext.drawText(client.textRenderer, "Wayfinder mod demo", 100, 200, 0xFFFFFFFFu.toInt(), true);
-        }
-        
         WorldRenderEvents.AFTER_TRANSLUCENT.register { context ->
             val matrixStack = context.matrixStack() ?: return@register
             val player = context.camera().pos
             val config = WayfindrConfig.get()
-            
-            val debugPlayer = MinecraftClient.getInstance().player
             
             for (waypoint in WaypointManager.waypoints) {
                 if (!waypoint.visible) continue
                 
                 val distance = player.distanceTo(waypoint.position.toVec3d())
                 
-                if (debugPlayer != null && debugPlayer.age % 100 == 0 && WaypointManager.waypoints.isNotEmpty()) {
-                    //debugPlayer.sendMessage(Text.literal("\u00a76[Debug] Max render distance: ${config.maxRenderDistance}, Current distance: $distance"), true)
-                }
-
                 if (distance <= config.maxRenderDistance) {
                     WayfindrRenderer.renderWaypointMarker(matrixStack, waypoint.position.toVec3d(), player, waypoint.color, waypoint.name)
                 }
