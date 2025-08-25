@@ -23,6 +23,8 @@
 
 ## Features
 * Create colored waypoints at your current position or at your crosshair location
+* Show/Hide waypoints
+* Teleport to waypoints in creative mode
 * Manage waypoints through an in-game GUI
 * Persistent waypoints that save between game sessions
 * Configurable render distance and placement distance
