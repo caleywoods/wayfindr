@@ -13,13 +13,13 @@
 ## Screenshots
 
 ### Waypoints in the World
-![Waypoints in the world](https://github.com/caleywoods/wayfindr/blob/main/screenshots/Waypoints.png?raw=true)
+![Waypoints in the world](https://github.com/caleywoods/wayfindr/blob/main/res/Waypoints.png?raw=true)
 
 ### Waypoint Manager
-![Waypoint manager interface](https://github.com/caleywoods/wayfindr/blob/main/screenshots/Waypoint%20manager.png?raw=true)
+![Waypoint manager interface](https://github.com/caleywoods/wayfindr/blob/main/res/Waypoint%20manager.png?raw=true)
 
 ### Configuration Screen
-![Configuration options](https://github.com/caleywoods/wayfindr/blob/main/screenshots/Config.png?raw=true)
+![Configuration options](https://github.com/caleywoods/wayfindr/blob/main/res/Config.png?raw=true)
 
 ## Features
 * Create colored waypoints at your current position or at your crosshair location
