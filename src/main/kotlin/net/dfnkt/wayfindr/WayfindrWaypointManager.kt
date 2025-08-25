@@ -97,4 +97,34 @@ object WaypointManager {
         }
         return false
     }
+
+    fun renameWaypoint(oldName: String, newName: String): Boolean {
+        if (getWaypoint(newName) != null) {
+            return false
+        }
+        
+        val waypoint = getWaypoint(oldName) ?: return false
+        val updatedWaypoint = waypoint.copy(name = newName)
+        val index = waypoints.indexOfFirst { it.name == oldName }
+        if (index != -1) {
+            waypoints[index] = updatedWaypoint
+            val saveManager = WayfindrSaveFileHandler()
+            saveManager.saveAllWaypoints(waypoints)
+            return true
+        }
+        return false
+    }
+    
+    fun updateWaypointColor(name: String, color: Int): Boolean {
+        val waypoint = getWaypoint(name) ?: return false
+        val updatedWaypoint = waypoint.copy(color = color)
+        val index = waypoints.indexOfFirst { it.name == name }
+        if (index != -1) {
+            waypoints[index] = updatedWaypoint
+            val saveManager = WayfindrSaveFileHandler()
+            saveManager.saveAllWaypoints(waypoints)
+            return true
+        }
+        return false
+    }
 }

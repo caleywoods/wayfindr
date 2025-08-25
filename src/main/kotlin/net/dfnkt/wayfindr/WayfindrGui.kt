@@ -2,52 +2,104 @@ package net.dfnkt.wayfindr
 
 import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.widget.ButtonWidget
+import net.minecraft.client.gui.widget.TextFieldWidget
 import net.minecraft.client.gui.DrawContext
 import net.minecraft.text.Text
 import net.minecraft.client.MinecraftClient
+import net.dfnkt.wayfindr.WaypointManager
+import net.minecraft.util.math.MathHelper
+import java.util.*
 
 class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
     private var waypointButtons = mutableListOf<ButtonWidget>()
     private var scrollOffset = 0
-    private val BUTTON_HEIGHT = 16 
-    private val BUTTON_SPACING = 2 
+    private val BUTTON_HEIGHT = 20
+    private val BUTTON_SPACING = 2
+    private val RIGHT_PANE_Y = 48
+    
+    // UI components
+    private lateinit var searchBox: TextFieldWidget
+    private var selectedWaypoint: WaypointManager.Waypoint? = null
+    private var paneWidth = 0
+    private var rightPaneX = 0
     
     override fun init() {
         super.init()
         
-        val centerX = width / 2
-        val startY = 30 
-        val waypointListY = startY
-        refreshWaypointList(waypointListY)
+        // Calculate pane dimensions
+        this.paneWidth = this.width / 2 - 8
+        this.rightPaneX = this.width - this.paneWidth
         
+        // Search box
+        this.searchBox = TextFieldWidget(
+            this.textRenderer,
+            10,
+            22,
+            paneWidth - 20,
+            20,
+            Text.literal("Search waypoints...")
+        )
+        this.searchBox.setChangedListener { text ->
+            refreshWaypointList(RIGHT_PANE_Y)
+        }
+        addDrawableChild(this.searchBox)
+        setInitialFocus(this.searchBox)
+        
+        // Add waypoint button
+        addDrawableChild(
+            ButtonWidget.builder(Text.literal("+ Add Waypoint")) { 
+                val client = MinecraftClient.getInstance()
+                val player = client.player
+                if (player != null) {
+                    val pos = player.pos
+                    val name = "Waypoint ${WaypointManager.waypoints.size + 1}"
+                    WaypointManager.addWaypoint(name, pos)
+                    refreshWaypointList(RIGHT_PANE_Y)
+                    selectWaypoint(name)
+                }
+            }
+                .dimensions(rightPaneX + 10, RIGHT_PANE_Y, paneWidth - 20, BUTTON_HEIGHT)
+                .build()
+        )
+        
+        // Settings button
         addDrawableChild(
             ButtonWidget.builder(Text.literal("Settings")) { 
                 client?.setScreen(WayfindrConfigScreen(this))
             }
-                .dimensions(centerX - 100, height - 40, 95, 20)
+                .dimensions(rightPaneX + 10, height - 40, (paneWidth / 2) - 15, BUTTON_HEIGHT)
                 .build()
         )
         
+        // Close button
         addDrawableChild(
             ButtonWidget.builder(Text.literal("Close")) { close() }
-                .dimensions(centerX + 5, height - 40, 95, 20)
+                .dimensions(rightPaneX + (paneWidth / 2) + 5, height - 40, (paneWidth / 2) - 15, BUTTON_HEIGHT)
                 .build()
         )
+        
+        refreshWaypointList(RIGHT_PANE_Y)
     }
     
     private fun refreshWaypointList(startY: Int) {
         waypointButtons.forEach { remove(it) }
         waypointButtons.clear()
         
-        val centerX = width / 2
-        var currentY = startY
+        val listAreaHeight = height - startY - 60
+        val maxVisibleWaypoints = maxOf(5, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
         
-        val listAreaHeight = height - startY - 100 
-        val calculatedMaxWaypoints = maxOf(3, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
-        val maxVisibleWaypoints = minOf(6, calculatedMaxWaypoints) 
-        if (WaypointManager.waypoints.isEmpty()) {
+        // Filter waypoints based on search text
+        val filteredWaypoints = if (this::searchBox.isInitialized && searchBox.text.isNotEmpty()) {
+            WaypointManager.waypoints.filter { 
+                it.name.lowercase(Locale.getDefault()).contains(searchBox.text.lowercase(Locale.getDefault())) 
+            }
+        } else {
+            WaypointManager.waypoints
+        }
+        
+        if (filteredWaypoints.isEmpty()) {
             val noWaypointsButton = ButtonWidget.builder(Text.literal("No waypoints found")) {}
-                .dimensions(centerX - 100, currentY, 200, BUTTON_HEIGHT)
+                .dimensions(10, startY + 10, paneWidth - 20, BUTTON_HEIGHT)
                 .build()
             addDrawableChild(noWaypointsButton)
             waypointButtons.add(noWaypointsButton)
@@ -55,112 +107,263 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
             return
         }
         
-        currentY += BUTTON_HEIGHT + BUTTON_SPACING
-        
-        if (scrollOffset >= WaypointManager.waypoints.size) {
-            scrollOffset = maxOf(0, WaypointManager.waypoints.size - 1)
+        // Adjust scroll offset if needed
+        if (scrollOffset >= filteredWaypoints.size) {
+            scrollOffset = maxOf(0, filteredWaypoints.size - 1)
         }
         
-        val visibleCount = minOf(maxVisibleWaypoints, WaypointManager.waypoints.size)
-        val endIndex = minOf(WaypointManager.waypoints.size, scrollOffset + visibleCount)
-        val startIndex = minOf(scrollOffset, WaypointManager.waypoints.size - visibleCount)
+        val visibleCount = minOf(maxVisibleWaypoints, filteredWaypoints.size)
+        val endIndex = minOf(filteredWaypoints.size, scrollOffset + visibleCount)
+        val startIndex = minOf(scrollOffset, filteredWaypoints.size - visibleCount).coerceAtLeast(0)
         
-        val visibleWaypoints = if (WaypointManager.waypoints.size > startIndex) {
-            WaypointManager.waypoints.subList(startIndex, endIndex)
+        val visibleWaypoints = if (filteredWaypoints.size > startIndex) {
+            filteredWaypoints.subList(startIndex, endIndex)
         } else {
             emptyList()
         }
         
+        var currentY = startY + 10
+        
+        // Add waypoint list entries
         visibleWaypoints.forEach { waypoint ->
-            val waypointText = "${waypoint.name} (${waypoint.getPosition().x.toInt()}, ${waypoint.getPosition().y.toInt()}, ${waypoint.getPosition().z.toInt()})"
-            println("[Wayfindr] Adding button for waypoint: ${waypoint.name} at Y=$currentY")
-            
-            val visibilityButtonText = if (waypoint.visible) "Hide" else "Show"
-            val visibilityButton = ButtonWidget.builder(Text.literal(visibilityButtonText)) {
-                WaypointManager.toggleWaypointVisibility(waypoint.name)
-                refreshWaypointList(startY)
+            // Create a container panel for each waypoint entry
+            val waypointButton = ButtonWidget.builder(Text.literal(waypoint.name)) {
+                selectWaypoint(waypoint.name)
             }
-                .dimensions(centerX - 210, currentY, 50, BUTTON_HEIGHT)
+                .dimensions(10, currentY, paneWidth - 40, BUTTON_HEIGHT)
                 .build()
             
-            val infoButton = ButtonWidget.builder(Text.literal(waypointText)) {}
-                .dimensions(centerX - 150, currentY, 250, BUTTON_HEIGHT)
-                .build()
-            infoButton.active = false
-            
-            val deleteButton = ButtonWidget.builder(Text.literal("Delete")) { 
-                deleteWaypoint(waypoint.name)
+            // Add a visibility indicator
+            val visibilityIndicator = ButtonWidget.builder(Text.literal(if (waypoint.visible) "👁" else "🚫")) { button ->
+                // Toggle visibility without selecting the waypoint
+                val success = WaypointManager.toggleWaypointVisibility(waypoint.name)
+                if (success) {
+                    // Update the button text to reflect the new visibility state
+                    val updatedWaypoint = WaypointManager.getWaypoint(waypoint.name)
+                    button.message = Text.literal(if (updatedWaypoint?.visible == true) "👁" else "🚫")
+                    
+                    // If this waypoint is currently selected, update its details
+                    if (selectedWaypoint?.name == waypoint.name) {
+                        selectedWaypoint = updatedWaypoint
+                        refreshWaypointDetails()
+                    }
+                }
             }
-                .dimensions(centerX + 110, currentY, 60, BUTTON_HEIGHT)
+                .dimensions(paneWidth - 30, currentY, 20, BUTTON_HEIGHT)
                 .build()
             
-            addDrawableChild(visibilityButton)
-            addDrawableChild(infoButton)
-            addDrawableChild(deleteButton)
-            waypointButtons.add(visibilityButton)
-            waypointButtons.add(infoButton)
-            waypointButtons.add(deleteButton)
+            addDrawableChild(waypointButton)
+            addDrawableChild(visibilityIndicator)
+            waypointButtons.add(waypointButton)
+            waypointButtons.add(visibilityIndicator)
             
             currentY += BUTTON_HEIGHT + BUTTON_SPACING
         }
         
-        if (WaypointManager.waypoints.size > 0) {
-            val paginationY = height - 80
+        // Add pagination controls if needed
+        if (filteredWaypoints.size > maxVisibleWaypoints) {
+            val paginationY = height - 60
             
-            if (WaypointManager.waypoints.size > maxVisibleWaypoints) {
-                val leftButton = ButtonWidget.builder(Text.literal("←")) {
-                    if (scrollOffset > 0) scrollOffset--
-                    refreshWaypointList(startY)
-                }
-                    .dimensions(centerX - 130, paginationY, 30, BUTTON_HEIGHT)
-                    .build()
-                
-                addDrawableChild(leftButton)
-                waypointButtons.add(leftButton)
+            // Up button
+            val upButton = ButtonWidget.builder(Text.literal("↑")) {
+                if (scrollOffset > 0) scrollOffset--
+                refreshWaypointList(startY)
             }
+                .dimensions(10, paginationY, 30, BUTTON_HEIGHT)
+                .build()
             
-            val scrollText = "Showing ${startIndex + 1}-$endIndex of ${WaypointManager.waypoints.size}"
+            addDrawableChild(upButton)
+            waypointButtons.add(upButton)
+            
+            // Down button
+            val downButton = ButtonWidget.builder(Text.literal("↓")) {
+                if (scrollOffset < filteredWaypoints.size - maxVisibleWaypoints) scrollOffset++
+                refreshWaypointList(startY)
+            }
+                .dimensions(paneWidth - 40, paginationY, 30, BUTTON_HEIGHT)
+                .build()
+            
+            addDrawableChild(downButton)
+            waypointButtons.add(downButton)
+            
+            // Scroll indicator
+            val scrollText = "Showing ${startIndex + 1}-$endIndex of ${filteredWaypoints.size}"
             val scrollIndicator = ButtonWidget.builder(Text.literal(scrollText)) {}
-                .dimensions(centerX - 100, paginationY, 200, BUTTON_HEIGHT)
+                .dimensions(45, paginationY, paneWidth - 90, BUTTON_HEIGHT)
                 .build()
             addDrawableChild(scrollIndicator)
             waypointButtons.add(scrollIndicator)
             scrollIndicator.active = false
-            
-            if (WaypointManager.waypoints.size > maxVisibleWaypoints) {
-                val rightButton = ButtonWidget.builder(Text.literal("→")) {
-                    if (scrollOffset < WaypointManager.waypoints.size - maxVisibleWaypoints) scrollOffset++
-                    refreshWaypointList(startY)
-                }
-                    .dimensions(centerX + 100, paginationY, 30, BUTTON_HEIGHT)
-                    .build()
-                
-                addDrawableChild(rightButton)
-                waypointButtons.add(rightButton)
+        }
+        
+        // If we had a selected waypoint, try to keep it selected
+        selectedWaypoint?.let { selected ->
+            if (filteredWaypoints.any { it.name == selected.name }) {
+                selectWaypoint(selected.name)
+            } else if (filteredWaypoints.isNotEmpty()) {
+                selectWaypoint(filteredWaypoints[0].name)
             }
         }
     }
     
-    private fun deleteWaypoint(name: String) {
-        WaypointManager.removeWaypoint(name)
-        refreshWaypointList(30)
+    private fun selectWaypoint(name: String) {
+        selectedWaypoint = WaypointManager.getWaypoint(name)
+        refreshWaypointDetails()
+    }
+    
+    private fun refreshWaypointDetails() {
+        // Remove previous detail buttons
+        for (child in children().toList()) {
+            if (child is ButtonWidget && child.x >= rightPaneX && !waypointButtons.contains(child)) {
+                remove(child)
+            }
+        }
+        
+        val waypoint = selectedWaypoint ?: return
+        
+        // Waypoint name
+        val nameButton = ButtonWidget.builder(Text.literal("Rename")) {
+            client?.setScreen(WayfindrRenameScreen(this, waypoint.name))
+        }
+            .dimensions(rightPaneX + 10, RIGHT_PANE_Y + 40, paneWidth - 20, BUTTON_HEIGHT)
+            .build()
+        addDrawableChild(nameButton)
+        
+        // Visibility toggle
+        val visibilityText = if (waypoint.visible) "Hide Waypoint" else "Show Waypoint"
+        val visibilityButton = ButtonWidget.builder(Text.literal(visibilityText)) {
+            WaypointManager.toggleWaypointVisibility(waypoint.name)
+            refreshWaypointDetails()
+        }
+            .dimensions(rightPaneX + 10, RIGHT_PANE_Y + 70, paneWidth - 20, BUTTON_HEIGHT)
+            .build()
+        addDrawableChild(visibilityButton)
+        
+        // Teleport button (if in creative mode)
         val client = MinecraftClient.getInstance()
-        client.player?.sendMessage(Text.literal("Deleted waypoint '$name'"), false)
+        if (client.player?.abilities?.creativeMode == true) {
+            val teleportButton = ButtonWidget.builder(Text.literal("Teleport")) {
+                val pos = waypoint.getPosition()
+                // client.player?.teleport(pos.x, pos.y, pos.z)
+            }
+                .dimensions(rightPaneX + 10, RIGHT_PANE_Y + 100, paneWidth - 20, BUTTON_HEIGHT)
+                .build()
+            addDrawableChild(teleportButton)
+        }
+        
+        // Delete button
+        val deleteButton = ButtonWidget.builder(Text.literal("Delete Waypoint")) {
+            WaypointManager.removeWaypoint(waypoint.name)
+            selectedWaypoint = null
+            refreshWaypointList(RIGHT_PANE_Y)
+            refreshWaypointDetails()
+        }
+            .dimensions(rightPaneX + 10, RIGHT_PANE_Y + 130, paneWidth - 20, BUTTON_HEIGHT)
+            .build()
+        addDrawableChild(deleteButton)
     }
     
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
         renderBackground(context, mouseX, mouseY, delta)
-        super.render(context, mouseX, mouseY, delta)
         
-        context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 6, 0xFFFFFF)
+        // Draw divider line
+        context.fill(paneWidth, 0, paneWidth + 1, height, 0xFFAAAAAA.toInt())
         
-        if (WaypointManager.waypoints.isNotEmpty()) {
-            val waypointCountText = "${WaypointManager.waypoints.size} Waypoints"
-            context.drawCenteredTextWithShadow(textRenderer, Text.literal(waypointCountText), width / 2, 35, 0xFFFFFF)
+        // Get filtered waypoints for rendering
+        val filteredWaypoints = if (this::searchBox.isInitialized && searchBox.text.isNotEmpty()) {
+            WaypointManager.waypoints.filter { 
+                it.name.lowercase(Locale.getDefault()).contains(searchBox.text.lowercase(Locale.getDefault())) 
+            }
+        } else {
+            WaypointManager.waypoints
         }
         
-        val totalWaypointCount = "Total waypoints: ${WaypointManager.waypoints.size}"
-        context.drawTextWithShadow(textRenderer, totalWaypointCount, 10, height - 20, 0xAAAAAA)
+        super.render(context, mouseX, mouseY, delta)
+        
+        // Draw title centered in the left pane
+        context.drawCenteredTextWithShadow(textRenderer, title, paneWidth / 2, 6, 0xFFFFFF)
+        
+        // Draw waypoint count
+        val waypointCountText = "${WaypointManager.waypoints.size} Waypoints"
+        context.drawTextWithShadow(textRenderer, waypointCountText, 10, height - 20, 0xAAAAAA)
+        
+        // Draw selected waypoint details
+        selectedWaypoint?.let { waypoint ->
+            // Draw waypoint name
+            context.drawTextWithShadow(
+                textRenderer, 
+                Text.literal(waypoint.name), 
+                rightPaneX + 10, 
+                RIGHT_PANE_Y + 10, 
+                0xFFFFFF
+            )
+            
+            // Draw coordinates
+            val pos = waypoint.getPosition()
+            val coordsText = "X: ${pos.x.toInt()}, Y: ${pos.y.toInt()}, Z: ${pos.z.toInt()}"
+            context.drawTextWithShadow(
+                textRenderer, 
+                coordsText, 
+                rightPaneX + 10, 
+                RIGHT_PANE_Y + 25, 
+                0xAAAAAA
+            )
+        }
+    }
+    
+    private fun getWaypointNameFromPosition(y: Int): String {
+        // Calculate the visible waypoints based on current filters and scroll position
+        val filteredWaypoints = if (this::searchBox.isInitialized && searchBox.text.isNotEmpty()) {
+            WaypointManager.waypoints.filter { 
+                it.name.lowercase(Locale.getDefault()).contains(searchBox.text.lowercase(Locale.getDefault())) 
+            }
+        } else {
+            WaypointManager.waypoints
+        }
+        
+        if (filteredWaypoints.isEmpty()) return ""
+        
+        val listAreaHeight = height - RIGHT_PANE_Y - 60
+        val maxVisibleWaypoints = maxOf(5, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
+        val visibleCount = minOf(maxVisibleWaypoints, filteredWaypoints.size)
+        val endIndex = minOf(filteredWaypoints.size, scrollOffset + visibleCount)
+        val startIndex = minOf(scrollOffset, filteredWaypoints.size - visibleCount).coerceAtLeast(0)
+        
+        val visibleWaypoints = if (filteredWaypoints.size > startIndex) {
+            filteredWaypoints.subList(startIndex, endIndex)
+        } else {
+            emptyList()
+        }
+        
+        // Calculate which waypoint corresponds to the given y position
+        val index = (y - (RIGHT_PANE_Y + 10)) / (BUTTON_HEIGHT + BUTTON_SPACING)
+        
+        if (index >= 0 && index < visibleWaypoints.size) {
+            return visibleWaypoints[index].name
+        }
+        
+        return ""
+    }
+    
+    override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
+        if (mouseX < paneWidth) {
+            // Scroll the waypoint list
+            if (verticalAmount > 0 && scrollOffset > 0) {
+                scrollOffset--
+                refreshWaypointList(RIGHT_PANE_Y)
+                return true
+            } else if (verticalAmount < 0 && WaypointManager.waypoints.size > 0) {
+                val listAreaHeight = height - RIGHT_PANE_Y - 60
+                val maxVisibleWaypoints = maxOf(5, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
+                
+                if (scrollOffset < WaypointManager.waypoints.size - maxVisibleWaypoints) {
+                    scrollOffset++
+                    refreshWaypointList(RIGHT_PANE_Y)
+                    return true
+                }
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)
     }
     
     override fun shouldPause(): Boolean = false
