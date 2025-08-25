@@ -22,9 +22,10 @@ object WaypointManager {
         val position: SerializableVec3d,
         val color: Int = 0xFF0000u.toInt(),
         val dimension: String = "minecraft:overworld",
+        val visible: Boolean = true,
     ) {
-        constructor(name: String, position: Vec3d, color: Int = 0xFF0000u.toInt(), dimension: String = "minecraft:overworld") :
-                this(name, SerializableVec3d(position), color, dimension)
+        constructor(name: String, position: Vec3d, color: Int = 0xFF0000u.toInt(), dimension: String = "minecraft:overworld", visible: Boolean = true) :
+                this(name, SerializableVec3d(position), color, dimension, visible)
 
         fun getPosition(): Vec3d {
             return position.toVec3d()
@@ -32,7 +33,7 @@ object WaypointManager {
     }
 
     fun addWaypoint(name: String, position: Vec3d): Waypoint {
-        val waypoint = Waypoint(name, position)
+        val waypoint = Waypoint(name, position, visible = true)
         val jsonWaypoint = Json.encodeToString(waypoint)
         waypoints.add(waypoint)
         val saveManager = WayfindrSaveFileHandler()
@@ -41,7 +42,16 @@ object WaypointManager {
     }
 
     fun addWaypoint(name: String, position: Vec3d, color: Int): Waypoint {
-        val waypoint = Waypoint(name, position, color)
+        val waypoint = Waypoint(name, position, color, visible = true)
+        val jsonWaypoint = Json.encodeToString(waypoint)
+        waypoints.add(waypoint)
+        val saveManager = WayfindrSaveFileHandler()
+        saveManager.saveWaypoint(jsonWaypoint)
+        return waypoint
+    }
+
+    fun addWaypoint(name: String, position: Vec3d, color: Int, visible: Boolean): Waypoint {
+        val waypoint = Waypoint(name, position, color, "minecraft:overworld", visible)
         val jsonWaypoint = Json.encodeToString(waypoint)
         waypoints.add(waypoint)
         val saveManager = WayfindrSaveFileHandler()
@@ -73,5 +83,18 @@ object WaypointManager {
     fun loadWaypoints(waypointList: List<Waypoint>) {
         waypoints.clear()
         waypoints.addAll(waypointList)
+    }
+
+    fun toggleWaypointVisibility(name: String): Boolean {
+        val waypoint = getWaypoint(name) ?: return false
+        val updatedWaypoint = waypoint.copy(visible = !waypoint.visible)
+        val index = waypoints.indexOfFirst { it.name == name }
+        if (index != -1) {
+            waypoints[index] = updatedWaypoint
+            val saveManager = WayfindrSaveFileHandler()
+            saveManager.saveAllWaypoints(waypoints)
+            return true
+        }
+        return false
     }
 }

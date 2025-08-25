@@ -75,6 +75,14 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
             val waypointText = "${waypoint.name} (${waypoint.getPosition().x.toInt()}, ${waypoint.getPosition().y.toInt()}, ${waypoint.getPosition().z.toInt()})"
             println("[Wayfindr] Adding button for waypoint: ${waypoint.name} at Y=$currentY")
             
+            val visibilityButtonText = if (waypoint.visible) "Hide" else "Show"
+            val visibilityButton = ButtonWidget.builder(Text.literal(visibilityButtonText)) {
+                WaypointManager.toggleWaypointVisibility(waypoint.name)
+                refreshWaypointList(startY)
+            }
+                .dimensions(centerX - 210, currentY, 50, BUTTON_HEIGHT)
+                .build()
+            
             val infoButton = ButtonWidget.builder(Text.literal(waypointText)) {}
                 .dimensions(centerX - 150, currentY, 250, BUTTON_HEIGHT)
                 .build()
@@ -86,8 +94,10 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
                 .dimensions(centerX + 110, currentY, 60, BUTTON_HEIGHT)
                 .build()
             
+            addDrawableChild(visibilityButton)
             addDrawableChild(infoButton)
             addDrawableChild(deleteButton)
+            waypointButtons.add(visibilityButton)
             waypointButtons.add(infoButton)
             waypointButtons.add(deleteButton)
             

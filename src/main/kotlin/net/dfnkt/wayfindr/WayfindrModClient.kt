@@ -62,18 +62,17 @@ object WayfindrModClient : ClientModInitializer {
             val player = context.camera().pos
             val config = WayfindrConfig.get()
             
-            // Debug message to check config values
             val debugPlayer = MinecraftClient.getInstance().player
             
             for (waypoint in WaypointManager.waypoints) {
+                if (!waypoint.visible) continue
+                
                 val distance = player.distanceTo(waypoint.position.toVec3d())
                 
-                // Show debug info occasionally
                 if (debugPlayer != null && debugPlayer.age % 100 == 0 && WaypointManager.waypoints.isNotEmpty()) {
-                    debugPlayer.sendMessage(Text.literal("\u00a76[Debug] Max render distance: ${config.maxRenderDistance}, Current distance: $distance"), true)
+                    //debugPlayer.sendMessage(Text.literal("\u00a76[Debug] Max render distance: ${config.maxRenderDistance}, Current distance: $distance"), true)
                 }
 
-                // Only render waypoints within configured distance
                 if (distance <= config.maxRenderDistance) {
                     WayfindrRenderer.renderWaypointMarker(matrixStack, waypoint.position.toVec3d(), player, waypoint.color, waypoint.name)
                 }
