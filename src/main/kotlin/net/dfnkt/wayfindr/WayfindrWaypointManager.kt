@@ -18,10 +18,22 @@ object WaypointManager {
     private val saveHandler = WayfindrSaveFileHandler
     
     /**
+     * Deadzone threshold in blocks for each axis.
+     * When the player is within this distance of the waypoint in all three dimensions,
+     * they are considered to have reached the waypoint.
+     */
+    const val DEADZONE_THRESHOLD = 3.0
+    
+    /**
      * List of all waypoints currently loaded in the game.
      */
     var waypoints = mutableListOf<Waypoint>()
         private set
+    
+    /**
+     * The currently active navigation waypoint, if any.
+     */
+    private var navigationTarget: Waypoint? = null
     
     /**
      * Initializes waypoints by loading them from the save file.
@@ -113,6 +125,63 @@ object WaypointManager {
      */
     fun getWaypoint(name: String): Waypoint? {
         return waypoints.find { it.name == name }
+    }
+    
+    /**
+     * Sets a waypoint as the current navigation target.
+     *
+     * @param name The name of the waypoint to navigate to
+     * @return True if the waypoint was found and set as navigation target, false otherwise
+     */
+    fun setNavigationTarget(name: String): Boolean {
+        val waypoint = waypoints.find { it.name == name } ?: return false
+        navigationTarget = waypoint
+        return true
+    }
+    
+    /**
+     * Clears the current navigation target.
+     */
+    fun clearNavigationTarget() {
+        navigationTarget = null
+    }
+    
+    /**
+     * Gets the current navigation target waypoint, if any.
+     *
+     * @return The current navigation target waypoint, or null if none is set
+     */
+    fun getNavigationTarget(): Waypoint? {
+        return navigationTarget
+    }
+    
+    /**
+     * Checks if the given waypoint is the current navigation target.
+     *
+     * @param name The name of the waypoint to check
+     * @return True if the waypoint is the current navigation target, false otherwise
+     */
+    fun isNavigationTarget(name: String): Boolean {
+        return navigationTarget?.name == name
+    }
+    
+    /**
+     * Checks if the player is within the deadzone of the current navigation target.
+     * The player must be within the threshold distance in all three dimensions (X, Y, Z).
+     *
+     * @param playerPos The current position of the player
+     * @return True if the player is within the deadzone, false otherwise or if no navigation target is set
+     */
+    fun isWithinDeadzone(playerPos: Vec3d): Boolean {
+        val target = navigationTarget ?: return false
+        val waypointPos = target.getPosition()
+        
+        // Check if the player is within the threshold distance in all three dimensions
+        val withinX = Math.abs(playerPos.x - waypointPos.x) <= DEADZONE_THRESHOLD
+        val withinY = Math.abs(playerPos.y - waypointPos.y) <= DEADZONE_THRESHOLD
+        val withinZ = Math.abs(playerPos.z - waypointPos.z) <= DEADZONE_THRESHOLD
+        
+        return withinX && withinY && withinZ
     }
     
     /**

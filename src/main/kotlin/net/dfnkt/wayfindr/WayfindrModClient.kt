@@ -13,6 +13,7 @@ import net.minecraft.client.util.InputUtil
 import org.lwjgl.glfw.GLFW
 import kotlin.random.Random
 import org.slf4j.LoggerFactory
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
 
 object WayfindrModClient : ClientModInitializer {
 
@@ -61,6 +62,13 @@ object WayfindrModClient : ClientModInitializer {
                 if (distance <= config.maxRenderDistance) {
                     WayfindrRenderer.renderWaypointMarker(matrixStack, waypoint.position.toVec3d(), player, waypoint.color, waypoint.name)
                 }
+            }
+        }
+        
+        HudRenderCallback.EVENT.register { drawContext, tickDelta ->
+            val client = MinecraftClient.getInstance()
+            if (client.currentScreen == null && !client.isPaused) {
+                WayfindrNavigationRenderer.render(drawContext)
             }
         }
         

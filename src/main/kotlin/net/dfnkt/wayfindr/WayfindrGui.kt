@@ -123,7 +123,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
             val waypointButton = ButtonWidget.builder(Text.literal(waypoint.name)) {
                 selectWaypoint(waypoint.name)
             }
-                .dimensions(10, currentY, paneWidth - 40, BUTTON_HEIGHT)
+                .dimensions(10, currentY, paneWidth - 60, BUTTON_HEIGHT)
                 .build()
             
             // Add a visibility indicator
@@ -142,13 +142,36 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
                     }
                 }
             }
+                .dimensions(paneWidth - 50, currentY, 20, BUTTON_HEIGHT)
+                .build()
+                
+            // Add a navigation guidance button
+            val isNavigationTarget = WaypointManager.isNavigationTarget(waypoint.name)
+            val navigationButton = ButtonWidget.builder(Text.literal(if (isNavigationTarget) "🧭" else "📍")) { button ->
+                // Toggle navigation guidance without selecting the waypoint
+                if (isNavigationTarget) {
+                    WaypointManager.clearNavigationTarget()
+                    button.message = Text.literal("📍")
+                } else {
+                    WaypointManager.setNavigationTarget(waypoint.name)
+                    // Update all navigation buttons to ensure only one is active
+                    refreshWaypointList(RIGHT_PANE_Y)
+                }
+                
+                // If this waypoint is currently selected, update its details
+                if (selectedWaypoint?.name == waypoint.name) {
+                    refreshWaypointDetails()
+                }
+            }
                 .dimensions(paneWidth - 30, currentY, 20, BUTTON_HEIGHT)
                 .build()
             
             addDrawableChild(waypointButton)
             addDrawableChild(visibilityIndicator)
+            addDrawableChild(navigationButton)
             waypointButtons.add(waypointButton)
             waypointButtons.add(visibilityIndicator)
+            waypointButtons.add(navigationButton)
             
             currentY += BUTTON_HEIGHT + BUTTON_SPACING
         }
@@ -232,6 +255,23 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
             .build()
         addDrawableChild(visibilityButton)
         
+        // Navigation guidance toggle
+        val isNavigationTarget = WaypointManager.isNavigationTarget(waypoint.name)
+        val navigationText = if (isNavigationTarget) "Stop Navigation 🧭" else "Navigate to Waypoint 📍"
+        val navigationButton = ButtonWidget.builder(Text.literal(navigationText)) {
+            if (isNavigationTarget) {
+                WaypointManager.clearNavigationTarget()
+            } else {
+                WaypointManager.setNavigationTarget(waypoint.name)
+                // Refresh the waypoint list to update navigation indicators
+                refreshWaypointList(RIGHT_PANE_Y)
+            }
+            refreshWaypointDetails()
+        }
+            .dimensions(rightPaneX + 10, RIGHT_PANE_Y + 100, paneWidth - 20, BUTTON_HEIGHT)
+            .build()
+        addDrawableChild(navigationButton)
+        
         // Teleport button (if in creative mode)
         val client = MinecraftClient.getInstance()
         if (client.player?.abilities?.creativeMode == true) {
@@ -240,7 +280,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
                 val command = "tp ${pos.x.toInt()} ${pos.y.toInt()} ${pos.z.toInt()}"
                 client.networkHandler?.sendChatCommand(command)
             }
-                .dimensions(rightPaneX + 10, RIGHT_PANE_Y + 100, paneWidth - 20, BUTTON_HEIGHT)
+                .dimensions(rightPaneX + 10, RIGHT_PANE_Y + 130, paneWidth - 20, BUTTON_HEIGHT)
                 .build()
             addDrawableChild(teleportButton)
         }
@@ -251,7 +291,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
             refreshWaypointList(RIGHT_PANE_Y)
             refreshWaypointDetails()
         }
-            .dimensions(rightPaneX + 10, RIGHT_PANE_Y + 130, paneWidth - 20, BUTTON_HEIGHT)
+            .dimensions(rightPaneX + 10, RIGHT_PANE_Y + (if (client.player?.abilities?.creativeMode == true) 160 else 130), paneWidth - 20, BUTTON_HEIGHT)
             .build()
         addDrawableChild(deleteButton)
     }

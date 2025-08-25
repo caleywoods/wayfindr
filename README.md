@@ -29,6 +29,7 @@
 * Persistent waypoints that save between game sessions
 * Configurable render distance and placement distance
 * Customizable keybindings
+* Navigation guidance with on-screen arrow pointing to selected waypoints
 
 ## Commands
 * `/waypoint add <name> [<color>]` - Create a colored marker at your current position
@@ -43,6 +44,15 @@
 * **Max Waypoint Placement Distance** - How far away you can place waypoints with the quick add key (default: 100 blocks)
 * **Open Menu Key** - Keybinding to open the waypoints manager (default: M)
 * **Quick Add Key** - Keybinding to quickly add a waypoint (default: N)
+
+## Navigation Guidance
+The waypoint navigation feature helps guide you to your selected destination:
+
+1. Select a waypoint for navigation by clicking the arrow button (↗️) next to the waypoint in the list
+2. Alternatively, select a waypoint and click the "Guide Me to Waypoint" button in the details panel
+3. An arrow will appear at the top of your screen pointing toward the selected waypoint
+4. The distance to the waypoint is displayed below the arrow
+5. To stop navigation guidance, click the arrow button again (➡️) or click "Stop Guiding to Waypoint" in the details panel
 
 ## Data Storage
 Waypoints are stored in `C:\Users\{username}\.minecraft\config\wayfindr\waypoints.json` (paths may vary on other operating systems)
@@ -91,6 +101,6 @@ gradlew.bat build
 
 ## Planned Features
 
-* The ability to mark a waypoint as your current destination and have an on-screen arrow pointing towards it
+* ~~The ability to mark a waypoint as your current destination and have an on-screen arrow pointing towards it~~ ✓ Added!
 * Treat a selected group of waypoints as a graph of connected nodes and determine the fastest route to visit each waypoint (traveling salesman problem)
 * Using Fabric global world data to optionally store/sync waypoints to multiple clients
