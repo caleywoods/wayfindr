@@ -1,11 +1,9 @@
 package net.dfnkt.wayfindr
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.minecraft.util.math.Vec3d
 import org.slf4j.LoggerFactory
-import net.minecraft.client.MinecraftClient
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 
 /**

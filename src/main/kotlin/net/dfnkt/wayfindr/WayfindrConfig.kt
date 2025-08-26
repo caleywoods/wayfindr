@@ -1,7 +1,6 @@
 package net.dfnkt.wayfindr
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.lwjgl.glfw.GLFW
 import java.io.File

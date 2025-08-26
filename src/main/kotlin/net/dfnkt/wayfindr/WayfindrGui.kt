@@ -6,8 +6,6 @@ import net.minecraft.client.gui.widget.TextFieldWidget
 import net.minecraft.client.gui.DrawContext
 import net.minecraft.text.Text
 import net.minecraft.client.MinecraftClient
-import net.dfnkt.wayfindr.WaypointManager
-import net.minecraft.util.math.MathHelper
 import java.util.*
 
 class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {

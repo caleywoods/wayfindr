@@ -2,13 +2,7 @@ package net.dfnkt.wayfindr
 
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.DrawContext
-import net.minecraft.client.render.VertexConsumerProvider
-import net.minecraft.client.util.math.MatrixStack
-import net.minecraft.util.math.MathHelper
 import net.minecraft.util.math.Vec3d
-import net.minecraft.util.math.RotationAxis
-import org.joml.Quaternionf
-import org.joml.AxisAngle4f
 import kotlin.math.atan2
 import kotlin.math.sqrt
 
