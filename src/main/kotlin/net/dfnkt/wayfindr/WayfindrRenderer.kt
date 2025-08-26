@@ -6,6 +6,8 @@ import net.minecraft.client.render.BufferRenderer
 import net.minecraft.client.render.Tessellator
 import net.minecraft.client.render.VertexFormat
 import net.minecraft.client.render.VertexFormats
+import net.minecraft.client.render.VertexFormat.DrawMode
+import net.minecraft.client.render.VertexFormatElement
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.util.math.Vec3d
 import net.minecraft.client.MinecraftClient
@@ -50,56 +52,56 @@ class WayfindrRenderer {
             val tessellator = Tessellator.getInstance()
             val bufferBuilder = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR)
 
+            // Position the beam to start at waypoint level and extend upward
             matrices.translate(-baseSize/2, 0f, -baseSize/2)
-
             matrices.scale(beamWidth, beamHeight, beamWidth)
-
+            
+            // Adjust the vertices to make the beam start at the bottom and extend upward
             val matrix = matrices.peek().positionMatrix
 
             // Top face (Y+)
-            bufferBuilder.vertex(matrix, -size, size, -size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, size, size, -size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, size, size, size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, -size, size, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 1.0f, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 1.0f, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 1.0f, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 1.0f, size).color(red, green, blue, alpha)
 
             // Bottom face (Y-)
-            bufferBuilder.vertex(matrix, -size, -size, size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, size, -size, size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, size, -size, -size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, -size, -size, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 0.0f, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 0.0f, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 0.0f, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 0.0f, -size).color(red, green, blue, alpha)
 
             // North face (Z-)
-            bufferBuilder.vertex(matrix, -size, -size, -size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, size, -size, -size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, size, size, -size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, -size, size, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 0.0f, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 0.0f, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 1.0f, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 1.0f, -size).color(red, green, blue, alpha)
 
             // South face (Z+)
-            bufferBuilder.vertex(matrix, -size, size, size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, size, size, size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, size, -size, size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, -size, -size, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 1.0f, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 1.0f, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 0.0f, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 0.0f, size).color(red, green, blue, alpha)
 
             // West face (X-)
-            bufferBuilder.vertex(matrix, -size, -size, size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, -size, -size, -size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, -size, size, -size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, -size, size, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 0.0f, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 0.0f, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 1.0f, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, -size, 1.0f, size).color(red, green, blue, alpha)
 
             // East face (X+)
-            bufferBuilder.vertex(matrix, size, size, size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, size, size, -size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, size, -size, -size).color(red, green, blue, alpha)
-            bufferBuilder.vertex(matrix, size, -size, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 1.0f, size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 1.0f, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 0.0f, -size).color(red, green, blue, alpha)
+            bufferBuilder.vertex(matrix, size, 0.0f, size).color(red, green, blue, alpha)
 
             val builtBuffer = bufferBuilder.end()
             BufferRenderer.drawWithGlobalProgram(builtBuffer)
 
+            matrices.pop()
             RenderSystem.enableCull()
             RenderSystem.disableBlend()
 
-            matrices.pop()
-            
             if (waypointName.isNotEmpty()) {
                 renderWaypointName(matrices, waypointPos, playerPos, waypointName, color, distance)
             }
