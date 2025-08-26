@@ -26,8 +26,8 @@
 * Show/Hide waypoints
 * Teleport to waypoints in creative mode
 * Manage waypoints through an in-game GUI
-* Persistent waypoints that save between game sessions
-* Configurable render distance and placement distance
+* Per world persistent waypoints that save between game sessions
+* Configurable waypoint render distance and placement distance
 * Customizable keybindings
 * Navigation guidance with on-screen arrow pointing to selected waypoints
 
