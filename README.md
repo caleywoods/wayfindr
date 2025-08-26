@@ -30,6 +30,9 @@
 * Configurable waypoint render distance and placement distance
 * Customizable keybindings
 * Navigation guidance with on-screen arrow pointing to selected waypoints
+* Server-synchronized waypoints that can be shared with other players
+* Distinction between personal and shared waypoints
+* Real-time waypoint updates across all connected clients
 
 ## Commands
 * `/waypoint add <name> [<color>]` - Create a colored marker at your current position
@@ -54,8 +57,61 @@ The waypoint navigation feature helps guide you to your selected destination:
 4. The distance to the waypoint is displayed below the arrow
 5. To stop navigation guidance, click the arrow button again (➡️) or click "Stop Guiding to Waypoint" in the details panel
 
+## Server Waypoint Sharing
+Wayfindr supports sharing waypoints with other players on multiplayer servers:
+
+1. Create a waypoint as usual through the GUI or command
+2. Shared waypoints are automatically synchronized with all players on the server
+3. All players on the server will receive the shared waypoint
+4. Shared waypoints are marked with a special icon in the waypoint list
+5. Only the waypoint creator or server operators can modify or delete shared waypoints
+
 ## Data Storage
-Waypoints are stored in `C:\Users\{username}\.minecraft\config\wayfindr\waypoints.json` (paths may vary on other operating systems)
+* **Client-side waypoints** are stored in `C:\Users\{username}\.minecraft\config\wayfindr\waypoints.json` (paths may vary on other operating systems)
+* **Server-side shared waypoints** are stored in the server's world directory under `wayfindr/shared_waypoints.json`
+
+## Technical Architecture
+Wayfindr is built with a client-server architecture that enables both personal and shared waypoints:
+
+### Core Architecture
+* **Client-side**: Manages personal waypoints and renders all waypoints in the world
+* **Server-side**: Acts as the source of truth for shared waypoints
+* **Networking**: Custom packet system for synchronizing waypoints between server and clients
+
+### Waypoint Synchronization
+1. When a player joins a server, they receive all shared waypoints
+2. When a waypoint is shared, all connected clients receive it in real-time
+3. Updates to shared waypoints are broadcast to all players
+4. Deletion of shared waypoints is synchronized across all clients
+
+### Key Components
+
+#### WaypointManager `WayfindrWaypointManager.kt`
+The central component that manages waypoints on the client side:
+* Stores and manages both personal and shared waypoints
+* Handles waypoint creation, updating, and deletion
+* Provides navigation functionality
+* Interfaces with the save file handler for persistence
+
+#### Networking `WayfindrNetworking.kt`
+Defines the network protocol for waypoint synchronization:
+* Establishes communication channels for different waypoint operations
+* Implements packet codecs for serializing/deserializing waypoint data
+* Registers payload types for client-server communication
+
+#### Network Client `WayfindrNetworkClient.kt`
+Handles client-side network operations:
+* Processes incoming waypoint packets from the server
+* Sends waypoint changes to the server
+* Merges server waypoints with local waypoints
+* Handles synchronization conflicts
+
+#### Server Waypoint Manager `ServerWaypointManager.kt`
+Manages shared waypoints on the server side:
+* Maintains the authoritative list of shared waypoints
+* Validates waypoint operations based on permissions
+* Broadcasts waypoint changes to all connected clients
+* Persists shared waypoints to the server's world directory
 
 ## Development
 
@@ -102,5 +158,7 @@ gradlew.bat build
 ## Planned Features
 
 * ~~The ability to mark a waypoint as your current destination and have an on-screen arrow pointing towards it~~ ✓ Added!
-* Treat a selected group of waypoints as a graph of connected nodes and determine the fastest route to visit each waypoint (traveling salesman problem)
-* Using Fabric global world data to optionally store/sync waypoints to multiple clients
+* ~~Using Fabric global world data to optionally store/sync waypoints to multiple clients~~ ✓ Added!
+* Treat a selected group of waypoints as a graph of connected nodes and determine the fastest route to visit each waypoint (traveling salesman problem// Added missing import)
+* Waypoint categories and filtering options
+* Custom waypoint icons and shapes

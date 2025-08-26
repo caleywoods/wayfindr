@@ -5,6 +5,9 @@ import kotlinx.serialization.json.Json
 import net.minecraft.util.math.Vec3d
 import org.slf4j.LoggerFactory
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
+import java.util.UUID
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 
 /**
  * Manages waypoints for the Wayfindr mod.
@@ -14,7 +17,19 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
  */
 object WaypointManager {
     private val logger = LoggerFactory.getLogger("wayfindr")
-    private val json = Json { prettyPrint = true }
+    
+    // Create a serializers module with the UUID serializer
+    private val waypointSerializers = SerializersModule {
+        contextual(UUID::class, UUIDSerializer)
+    }
+    
+    // Initialize Json with the serializers module
+    private val json = Json { 
+        prettyPrint = true 
+        serializersModule = waypointSerializers
+        ignoreUnknownKeys = true
+    }
+    
     private val saveHandler = WayfindrSaveFileHandler
     
     /**
@@ -96,6 +111,21 @@ object WaypointManager {
     }
     
     /**
+     * Adds a pre-constructed waypoint to the waypoint list.
+     * 
+     * @param waypoint The waypoint object to add
+     * @return The added waypoint
+     */
+    fun addWaypoint(waypoint: Waypoint): Waypoint {
+        waypoints.add(waypoint)
+        
+        val waypointJson = json.encodeToString(waypoint)
+        saveHandler.saveWaypoint(waypointJson)
+        
+        return waypoint
+    }
+    
+    /**
      * Removes a waypoint with the given name.
      * 
      * @param name The name of the waypoint to remove
@@ -106,6 +136,56 @@ object WaypointManager {
         waypoints.remove(waypoint)
         saveHandler.saveAllWaypoints(waypoints)
         return true
+    }
+    
+    /**
+     * Removes a waypoint with the given UUID.
+     * 
+     * @param id The UUID of the waypoint to remove
+     * @return True if the waypoint was found and removed, false otherwise
+     */
+    fun removeWaypoint(id: UUID): Boolean {
+        val waypoint = waypoints.find { it.id == id } ?: return false
+        waypoints.remove(waypoint)
+        saveHandler.saveAllWaypoints(waypoints)
+        return true
+    }
+    
+    /**
+     * Removes a waypoint at the specified index.
+     * 
+     * @param index The index of the waypoint to remove
+     * @return True if the index was valid and the waypoint was removed, false otherwise
+     */
+    fun removeWaypoint(index: Int): Boolean {
+        if (index < 0 || index >= waypoints.size) return false
+        waypoints.removeAt(index)
+        saveHandler.saveAllWaypoints(waypoints)
+        return true
+    }
+    
+    /**
+     * Updates an existing waypoint with new data.
+     * 
+     * @param waypoint The waypoint with updated data
+     * @return True if the waypoint was found and updated, false otherwise
+     */
+    fun updateWaypoint(waypoint: Waypoint): Boolean {
+        val index = waypoints.indexOfFirst { it.id == waypoint.id }
+        if (index < 0) return false
+        
+        waypoints[index] = waypoint
+        saveHandler.saveAllWaypoints(waypoints)
+        return true
+    }
+    
+    /**
+     * Gets all waypoints currently managed.
+     * 
+     * @return A list of all waypoints
+     */
+    fun getAllWaypoints(): List<Waypoint> {
+        return waypoints.toList()
     }
     
     /**
@@ -157,6 +237,16 @@ object WaypointManager {
      */
     fun getWaypoint(name: String): Waypoint? {
         return waypoints.find { it.name == name }
+    }
+    
+    /**
+     * Gets a waypoint by its unique ID.
+     * 
+     * @param id The UUID of the waypoint to retrieve
+     * @return The waypoint if found, null otherwise
+     */
+    fun getWaypoint(id: UUID): Waypoint? {
+        return waypoints.find { it.id == id }
     }
     
     /**
@@ -226,6 +316,17 @@ object WaypointManager {
     }
     
     /**
+     * Replaces all waypoints with the given list.
+     * This is used for syncing with the server.
+     * 
+     * @param newWaypoints The new list of waypoints
+     */
+    fun replaceAllWaypoints(newWaypoints: List<Waypoint>) {
+        waypoints = newWaypoints.toMutableList()
+        saveHandler.saveAllWaypoints(waypoints)
+    }
+    
+    /**
      * Represents a waypoint in the game world.
      * 
      * @property name The name of the waypoint
@@ -233,6 +334,9 @@ object WaypointManager {
      * @property color The color of the waypoint in RGB format
      * @property dimension The dimension of the waypoint
      * @property visible Whether the waypoint is currently visible
+     * @property isShared Whether this waypoint is shared with other players on the server
+     * @property owner UUID of the player who created this waypoint (null for local waypoints)
+     * @property id Unique identifier for this waypoint, used for server synchronization
      */
     @Serializable
     data class Waypoint(
@@ -240,7 +344,10 @@ object WaypointManager {
         val position: SerializableVec3d,
         var color: Int,
         var dimension: String,
-        var visible: Boolean
+        var visible: Boolean,
+        var isShared: Boolean = false,
+        @Serializable(with = UUIDSerializer::class) var owner: UUID? = null,
+        @Serializable(with = UUIDSerializer::class) var id: UUID = UUID.randomUUID()
     ) {
         /**
          * Gets the position as a Minecraft Vec3d.

@@ -6,9 +6,11 @@ import net.minecraft.client.gui.widget.TextFieldWidget
 import net.minecraft.client.gui.DrawContext
 import net.minecraft.text.Text
 import net.minecraft.client.MinecraftClient
+import org.slf4j.LoggerFactory
 import java.util.*
 
 class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
+    private val logger = LoggerFactory.getLogger("wayfindr")
     private var waypointButtons = mutableListOf<ButtonWidget>()
     private var scrollOffset = 0
     private val BUTTON_HEIGHT = 20
@@ -20,6 +22,10 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
     private var selectedWaypoint: WaypointManager.Waypoint? = null
     private var paneWidth = 0
     private var rightPaneX = 0
+    
+    // Filter options
+    private var showPersonalWaypoints = true
+    private var showSharedWaypoints = true
     
     override fun init() {
         super.init()
@@ -42,6 +48,27 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         }
         addDrawableChild(this.searchBox)
         setInitialFocus(this.searchBox)
+        
+        // Filter buttons
+        addDrawableChild(
+            ButtonWidget.builder(Text.literal(if (showPersonalWaypoints) "✓ Personal" else "❌ Personal")) { button ->
+                showPersonalWaypoints = !showPersonalWaypoints
+                button.message = Text.literal(if (showPersonalWaypoints) "✓ Personal" else "❌ Personal")
+                refreshWaypointList(RIGHT_PANE_Y)
+            }
+                .dimensions(10, height - 80, paneWidth / 2 - 15, BUTTON_HEIGHT)
+                .build()
+        )
+        
+        addDrawableChild(
+            ButtonWidget.builder(Text.literal(if (showSharedWaypoints) "✓ Shared" else "❌ Shared")) { button ->
+                showSharedWaypoints = !showSharedWaypoints
+                button.message = Text.literal(if (showSharedWaypoints) "✓ Shared" else "❌ Shared")
+                refreshWaypointList(RIGHT_PANE_Y)
+            }
+                .dimensions(paneWidth / 2 + 5, height - 80, paneWidth / 2 - 15, BUTTON_HEIGHT)
+                .build()
+        )
         
         // Add waypoint button
         addDrawableChild(
@@ -83,7 +110,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         waypointButtons.forEach { remove(it) }
         waypointButtons.clear()
         
-        val listAreaHeight = height - startY - 60
+        val listAreaHeight = height - startY - 90 // Adjusted for filter buttons
         val maxVisibleWaypoints = maxOf(5, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
         
         val filteredWaypoints = getFilteredWaypoints()
@@ -118,7 +145,8 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         // Add waypoint list entries
         visibleWaypoints.forEach { waypoint ->
             // Create a container panel for each waypoint entry
-            val waypointButton = ButtonWidget.builder(Text.literal(waypoint.name)) {
+            val buttonText = buildWaypointButtonText(waypoint)
+            val waypointButton = ButtonWidget.builder(buttonText) {
                 selectWaypoint(waypoint.name)
             }
                 .dimensions(10, currentY, paneWidth - 60, BUTTON_HEIGHT)
@@ -176,7 +204,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         
         // Add pagination controls if needed
         if (filteredWaypoints.size > maxVisibleWaypoints) {
-            val paginationY = height - 60
+            val paginationY = height - 100 // Adjusted for filter buttons
             
             // Up button
             val upButton = ButtonWidget.builder(Text.literal("↑")) {
@@ -218,6 +246,15 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
                 selectWaypoint(filteredWaypoints[0].name)
             }
         }
+    }
+    
+    /**
+     * Creates formatted text for waypoint button with appropriate styling
+     * based on whether it's shared or personal
+     */
+    private fun buildWaypointButtonText(waypoint: WaypointManager.Waypoint): Text {
+        val prefix = if (waypoint.isShared) "🌐 " else "🔒 "
+        return Text.literal(prefix + waypoint.name)
     }
     
     private fun selectWaypoint(name: String) {
@@ -270,28 +307,98 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
             .build()
         addDrawableChild(navigationButton)
         
+        // Shared status toggle (only if player owns the waypoint or it's personal)
+        if (!waypoint.isShared || waypoint.owner == MinecraftClient.getInstance().player?.uuid) {
+            val shareText = if (waypoint.isShared) "Make Personal 🔒" else "Share Waypoint 🌐"
+            val shareButton = ButtonWidget.builder(Text.literal(shareText)) {
+                // Toggle shared status
+                waypoint.isShared = !waypoint.isShared
+                
+                // If making it shared, set the owner
+                if (waypoint.isShared) {
+                    waypoint.owner = MinecraftClient.getInstance().player?.uuid
+                    
+                    // Send to server if connected
+                    if (MinecraftClient.getInstance().networkHandler != null) {
+                        // Send the waypoint to the server for sharing
+                        val success = WayfindrNetworkClient.sendWaypointToServer(waypoint)
+                        if (success) {
+                            logger.info("Shared waypoint with server: ${waypoint.name}")
+                        } else {
+                            logger.error("Failed to share waypoint with server: ${waypoint.name}")
+                            // Revert the shared status if sending failed
+                            waypoint.isShared = false
+                            waypoint.owner = null
+                        }
+                    }
+                } else {
+                    // If making it personal, we need to delete it from the server if it was previously shared
+                    if (MinecraftClient.getInstance().networkHandler != null && waypoint.owner != null) {
+                        // Send delete request to server
+                        val success = WayfindrNetworkClient.sendWaypointDeleteToServer(waypoint.id)
+                        if (success) {
+                            logger.info("Removed shared waypoint from server: ${waypoint.name}")
+                        } else {
+                            logger.error("Failed to remove shared waypoint from server: ${waypoint.name}")
+                        }
+                    }
+                    
+                    // Clear the owner
+                    waypoint.owner = null
+                }
+                
+                refreshWaypointDetails()
+                refreshWaypointList(RIGHT_PANE_Y)
+            }
+                .dimensions(rightPaneX + 10, RIGHT_PANE_Y + 130, paneWidth - 20, BUTTON_HEIGHT)
+                .build()
+            addDrawableChild(shareButton)
+        }
+        
         // Teleport button (if in creative mode)
         val client = MinecraftClient.getInstance()
+        val yOffset = if (!waypoint.isShared || waypoint.owner == client.player?.uuid) 160 else 130
+        
         if (client.player?.abilities?.creativeMode == true) {
             val teleportButton = ButtonWidget.builder(Text.literal("Teleport")) {
                 val pos = waypoint.getPosition()
                 val command = "tp ${pos.x.toInt()} ${pos.y.toInt()} ${pos.z.toInt()}"
                 client.networkHandler?.sendChatCommand(command)
             }
-                .dimensions(rightPaneX + 10, RIGHT_PANE_Y + 130, paneWidth - 20, BUTTON_HEIGHT)
+                .dimensions(rightPaneX + 10, RIGHT_PANE_Y + yOffset, paneWidth - 20, BUTTON_HEIGHT)
                 .build()
             addDrawableChild(teleportButton)
         }
         
-        val deleteButton = ButtonWidget.builder(Text.literal("Delete Waypoint")) {
-            WaypointManager.removeWaypoint(waypoint.name)
-            selectedWaypoint = null
-            refreshWaypointList(RIGHT_PANE_Y)
-            refreshWaypointDetails()
+        // Delete button (only if player owns the waypoint or it's personal)
+        if (!waypoint.isShared || waypoint.owner == client.player?.uuid) {
+            val deleteYOffset = if (client.player?.abilities?.creativeMode == true) yOffset + 30 else yOffset
+            val deleteButton = ButtonWidget.builder(Text.literal("Delete Waypoint")) {
+                if (waypoint.isShared) {
+                    // Send delete request to server if connected
+                    if (MinecraftClient.getInstance().networkHandler != null) {
+                        val success = WayfindrNetworkClient.sendWaypointDeleteToServer(waypoint.id)
+                        if (success) {
+                            logger.info("Sent delete request to server for waypoint: ${waypoint.name}")
+                        } else {
+                            logger.error("Failed to send delete request to server for waypoint: ${waypoint.name}")
+                        }
+                    }
+                    
+                    // Also remove locally
+                    WaypointManager.removeWaypoint(waypoint.name)
+                } else {
+                    // Just remove locally
+                    WaypointManager.removeWaypoint(waypoint.name)
+                }
+                selectedWaypoint = null
+                refreshWaypointList(RIGHT_PANE_Y)
+                refreshWaypointDetails()
+            }
+                .dimensions(rightPaneX + 10, RIGHT_PANE_Y + deleteYOffset, paneWidth - 20, BUTTON_HEIGHT)
+                .build()
+            addDrawableChild(deleteButton)
         }
-            .dimensions(rightPaneX + 10, RIGHT_PANE_Y + (if (client.player?.abilities?.creativeMode == true) 160 else 130), paneWidth - 20, BUTTON_HEIGHT)
-            .build()
-        addDrawableChild(deleteButton)
     }
     
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
@@ -307,16 +414,19 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         // Draw title centered in the left pane
         context.drawCenteredTextWithShadow(textRenderer, title, paneWidth / 2, 6, 0xFFFFFF)
         
-        // Draw waypoint count
-        val waypointCountText = "${WaypointManager.waypoints.size} Waypoints"
+        // Draw waypoint count with breakdown
+        val personalCount = WaypointManager.waypoints.count { !it.isShared }
+        val sharedCount = WaypointManager.waypoints.count { it.isShared }
+        val waypointCountText = "${WaypointManager.waypoints.size} Waypoints (${personalCount} Personal, ${sharedCount} Shared)"
         context.drawTextWithShadow(textRenderer, waypointCountText, 10, height - 20, 0xAAAAAA)
         
         // Draw selected waypoint details
         selectedWaypoint?.let { waypoint ->
-            // Draw waypoint name
+            // Draw waypoint name with shared/personal indicator
+            val namePrefix = if (waypoint.isShared) "🌐 " else "🔒 "
             context.drawTextWithShadow(
                 textRenderer, 
-                Text.literal(waypoint.name), 
+                Text.literal(namePrefix + waypoint.name), 
                 rightPaneX + 10, 
                 RIGHT_PANE_Y + 10, 
                 0xFFFFFF
@@ -332,7 +442,39 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
                 RIGHT_PANE_Y + 25, 
                 0xAAAAAA
             )
+            
+            // Draw owner info if shared
+            if (waypoint.isShared && waypoint.owner != null) {
+                val ownerName = getPlayerNameFromUUID(waypoint.owner!!)
+                val ownerText = "Owner: $ownerName"
+                context.drawTextWithShadow(
+                    textRenderer,
+                    ownerText,
+                    rightPaneX + 10,
+                    RIGHT_PANE_Y + 25 + textRenderer.fontHeight + 2,
+                    0xAAAAAA
+                )
+            }
         }
+    }
+    
+    /**
+     * Gets player name from UUID, or returns "Unknown Player" if not found
+     */
+    private fun getPlayerNameFromUUID(uuid: UUID): String {
+        val client = MinecraftClient.getInstance()
+        
+        // Try to find in current player list
+        client.networkHandler?.playerList?.find { it.profile.id == uuid }?.let {
+            return it.profile.name
+        }
+        
+        // If player is local client
+        if (client.player?.uuid == uuid) {
+            return client.player?.name?.string ?: "Unknown Player"
+        }
+        
+        return "Unknown Player"
     }
     
     private fun getWaypointNameFromPosition(y: Int): String {
@@ -340,7 +482,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         
         if (filteredWaypoints.isEmpty()) return ""
         
-        val listAreaHeight = height - RIGHT_PANE_Y - 60
+        val listAreaHeight = height - RIGHT_PANE_Y - 90 // Adjusted for filter buttons
         val maxVisibleWaypoints = maxOf(5, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
         val visibleCount = minOf(maxVisibleWaypoints, filteredWaypoints.size)
         val endIndex = minOf(filteredWaypoints.size, scrollOffset + visibleCount)
@@ -370,7 +512,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
                 refreshWaypointList(RIGHT_PANE_Y)
                 return true
             } else if (verticalAmount < 0 && WaypointManager.waypoints.size > 0) {
-                val listAreaHeight = height - RIGHT_PANE_Y - 60
+                val listAreaHeight = height - RIGHT_PANE_Y - 90 // Adjusted for filter buttons
                 val maxVisibleWaypoints = maxOf(5, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
                 
                 if (scrollOffset < WaypointManager.waypoints.size - maxVisibleWaypoints) {
@@ -386,12 +528,20 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
     override fun shouldPause(): Boolean = false
     
     private fun getFilteredWaypoints(): List<WaypointManager.Waypoint> {
-        return if (this::searchBox.isInitialized && searchBox.text.isNotEmpty()) {
-            WaypointManager.waypoints.filter { 
+        var waypoints = WaypointManager.waypoints
+        
+        // Apply search filter
+        if (this::searchBox.isInitialized && searchBox.text.isNotEmpty()) {
+            waypoints = waypoints.filter { 
                 it.name.lowercase(Locale.getDefault()).contains(searchBox.text.lowercase(Locale.getDefault())) 
-            }
-        } else {
-            WaypointManager.waypoints
+            }.toMutableList()
         }
+        
+        // Apply shared/personal filters
+        waypoints = waypoints.filter {
+            (it.isShared && showSharedWaypoints) || (!it.isShared && showPersonalWaypoints)
+        }.toMutableList()
+        
+        return waypoints
     }
 }
