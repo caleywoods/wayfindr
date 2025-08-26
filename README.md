@@ -34,6 +34,20 @@
 * Distinction between personal and shared waypoints
 * Real-time waypoint updates across all connected clients
 
+## Requirements
+* Minecraft 1.21.4
+* Fabric Loader 0.16.10+
+* Fabric API 0.119.2+
+* Fabric Language Kotlin 1.13.1+ (required for Kotlin mods)
+
+## Installation
+1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft 1.21.4
+2. Download and place the following mods in your `mods` folder:
+   - [Fabric API](https://modrinth.com/mod/fabric-api)
+   - [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin/versions?g=1.21.4)
+   - Wayfindr (this mod)
+3. Launch Minecraft with the Fabric profile
+
 ## Commands
 * `/waypoint add <name> [<color>]` - Create a colored marker at your current position
 * `/waypoint delete <name>` - Remove a named waypoint
