@@ -27,14 +27,19 @@ object WayfindrNetworkClient {
             context.client().execute {
                 try {
                     logger.info("Received waypoint sync data: $jsonData")
-                    val waypoints = json.decodeFromString<List<WaypointManager.Waypoint>>(jsonData)
-                    logger.info("Received waypoint sync with ${waypoints.size} waypoints")
+                    val serverWaypoints = json.decodeFromString<List<WaypointManager.Waypoint>>(jsonData)
+                    logger.info("Received waypoint sync with ${serverWaypoints.size} waypoints")
                     
-                    // Use replaceAllWaypoints instead of directly modifying the list
-                    // This ensures proper saving and UI updates
-                    WaypointManager.replaceAllWaypoints(waypoints)
+                    // Get current local waypoints
+                    val localWaypoints = WaypointManager.waypoints.filter { !it.isShared }
                     
-                    logger.info("Synchronized ${waypoints.size} waypoints from server")
+                    // Combine local non-shared waypoints with server waypoints
+                    val combinedWaypoints = localWaypoints + serverWaypoints
+                    
+                    // Use replaceAllWaypoints with the combined list
+                    WaypointManager.replaceAllWaypoints(combinedWaypoints)
+                    
+                    logger.info("Synchronized ${serverWaypoints.size} shared waypoints from server while preserving ${localWaypoints.size} local waypoints")
                 } catch (e: Exception) {
                     logger.error("Error processing waypoint sync", e)
                 }
