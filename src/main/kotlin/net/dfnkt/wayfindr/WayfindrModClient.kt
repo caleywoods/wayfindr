@@ -50,6 +50,9 @@ object WayfindrModClient : ClientModInitializer {
         // Register world change events to reload waypoints
         registerWorldChangeEvents()
         
+        // Initialize network handlers for waypoint synchronization
+        WayfindrNetworkClient.initialize()
+        
         WorldRenderEvents.AFTER_TRANSLUCENT.register { context ->
             val matrixStack = context.matrixStack() ?: return@register
             val player = context.camera().pos
@@ -66,7 +69,7 @@ object WayfindrModClient : ClientModInitializer {
             }
         }
         
-        HudRenderCallback.EVENT.register { drawContext, tickDelta ->
+        HudRenderCallback.EVENT.register { drawContext, _ ->
             val client = MinecraftClient.getInstance()
             if (client.currentScreen == null && !client.isPaused) {
                 WayfindrNavigationRenderer.render(drawContext)
