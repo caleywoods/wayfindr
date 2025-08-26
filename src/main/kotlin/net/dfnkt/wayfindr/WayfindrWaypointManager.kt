@@ -5,6 +5,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.minecraft.util.math.Vec3d
 import org.slf4j.LoggerFactory
+import net.minecraft.client.MinecraftClient
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 
 /**
  * Manages waypoints for the Wayfindr mod.
@@ -36,11 +38,43 @@ object WaypointManager {
     private var navigationTarget: Waypoint? = null
     
     /**
+     * The current world name.
+     */
+    private var currentWorldName: String = "default"
+    
+    /**
      * Initializes waypoints by loading them from the save file.
+     * Also registers world change listeners.
      */
     fun initializeWaypoints() {
+        // Register world change listener
+        ClientLifecycleEvents.CLIENT_STARTED.register { client ->
+            // Initial load
+            loadWaypointsForCurrentWorld()
+        }
+        
+        // Load waypoints for the current world
+        loadWaypointsForCurrentWorld()
+    }
+    
+    /**
+     * Loads waypoints for the current world.
+     * This should be called when the player changes worlds.
+     */
+    fun loadWaypointsForCurrentWorld() {
+        val newWorldName = saveHandler.getCurrentWorldName()
+        
+        // Only reload if the world has changed
+        if (currentWorldName != newWorldName) {
+            logger.info("World changed from '$currentWorldName' to '$newWorldName', reloading waypoints")
+            currentWorldName = newWorldName
+            
+            // Clear navigation target when changing worlds
+            navigationTarget = null
+        }
+        
         waypoints = saveHandler.loadWaypoints().toMutableList()
-        logger.info("Loaded ${waypoints.size} waypoints")
+        logger.info("Loaded ${waypoints.size} waypoints for world '$currentWorldName'")
     }
     
     /**
@@ -182,6 +216,15 @@ object WaypointManager {
         val withinZ = Math.abs(playerPos.z - waypointPos.z) <= DEADZONE_THRESHOLD
         
         return withinX && withinY && withinZ
+    }
+    
+    /**
+     * Gets the current world name.
+     *
+     * @return The name of the current world
+     */
+    fun getCurrentWorldName(): String {
+        return currentWorldName
     }
     
     /**

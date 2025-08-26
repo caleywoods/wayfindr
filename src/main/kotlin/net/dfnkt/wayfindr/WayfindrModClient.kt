@@ -14,11 +14,13 @@ import org.lwjgl.glfw.GLFW
 import kotlin.random.Random
 import org.slf4j.LoggerFactory
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 
 object WayfindrModClient : ClientModInitializer {
 
     private lateinit var openWaypointMenu: KeyBinding
     private lateinit var quickAddWaypoint: KeyBinding
+    private val logger = LoggerFactory.getLogger("wayfindr")
     
     private fun registerKeybindings() {
         val config = WayfindrConfig.get()
@@ -48,6 +50,9 @@ object WayfindrModClient : ClientModInitializer {
         registerKeybindings()
         
         WaypointManager.initializeWaypoints()
+        
+        // Register world change events to reload waypoints
+        registerWorldChangeEvents()
         
         WorldRenderEvents.AFTER_TRANSLUCENT.register { context ->
             val matrixStack = context.matrixStack() ?: return@register
@@ -88,6 +93,22 @@ object WayfindrModClient : ClientModInitializer {
                     WaypointManager.addWaypoint(waypointName, position, randomColor)
                 }
             }
+        }
+    }
+    
+    /**
+     * Registers event handlers for world changes to reload waypoints.
+     */
+    private fun registerWorldChangeEvents() {
+        // When joining a server or singleplayer world
+        ClientPlayConnectionEvents.JOIN.register { handler, sender, client ->
+            logger.info("Joined world, reloading waypoints")
+            WaypointManager.loadWaypointsForCurrentWorld()
+        }
+        
+        // When disconnecting from a server or singleplayer world
+        ClientPlayConnectionEvents.DISCONNECT.register { handler, client ->
+            logger.info("Disconnected from world")
         }
     }
     
