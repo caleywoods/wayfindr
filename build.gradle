@@ -91,3 +91,89 @@ publishing {
 		// retrieving dependencies.
 	}
 }
+
+// Semantic Versioning Tasks
+import java.util.regex.Pattern
+import java.util.regex.Matcher
+
+task setversion {
+    group = 'versioning'
+    description = 'Updates the version in gradle.properties based on semantic versioning (default: minor version bump)'
+    
+    doLast {
+        // Get the version type from command line args or default to 'minor'
+        def versionType = 'minor'
+        if (project.hasProperty('args')) {
+            def args = project.getProperty('args').split('\\s+')
+            if (args.length > 0 && (args[0] == 'major' || args[0] == 'minor' || args[0] == 'patch')) {
+                versionType = args[0]
+            }
+        }
+        
+        // Read the gradle.properties file
+        def propsFile = file('gradle.properties')
+        def props = new Properties()
+        props.load(new FileInputStream(propsFile))
+        
+        // Get the current version
+        def currentVersion = props.getProperty('mod_version')
+        println "Current version: ${currentVersion}"
+        
+        // Parse the version using regex
+        def pattern = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)(.*)")
+        def matcher = pattern.matcher(currentVersion)
+        
+        if (matcher.matches()) {
+            def major = Integer.parseInt(matcher.group(1))
+            def minor = Integer.parseInt(matcher.group(2))
+            def patch = Integer.parseInt(matcher.group(3))
+            def suffix = matcher.group(4) ?: ""
+            
+            // Update version based on type
+            switch (versionType) {
+                case 'major':
+                    major++
+                    minor = 0
+                    patch = 0
+                    break
+                case 'minor':
+                    minor++
+                    patch = 0
+                    break
+                case 'patch':
+                    patch++
+                    break
+            }
+            
+            // Create the new version string
+            def newVersion = "${major}.${minor}.${patch}${suffix}"
+            println "New version: ${newVersion}"
+            
+            // Update the properties
+            props.setProperty('mod_version', newVersion)
+            
+            // Save the properties back to the file
+            def writer = new FileWriter(propsFile)
+            props.store(writer, null)
+            writer.close()
+            
+            println "Version updated successfully to ${newVersion}"
+        } else {
+            throw new GradleException("Invalid version format: ${currentVersion}. Expected format: X.Y.Z")
+        }
+    }
+}
+
+// Helper task to show the current version
+task showversion {
+    group = 'versioning'
+    description = 'Shows the current version from gradle.properties'
+    
+    doLast {
+        def propsFile = file('gradle.properties')
+        def props = new Properties()
+        props.load(new FileInputStream(propsFile))
+        def currentVersion = props.getProperty('mod_version')
+        println "Current version: ${currentVersion}"
+    }
+}

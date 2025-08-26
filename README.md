@@ -135,6 +135,29 @@ gradlew.bat runclient
 
 This will launch Minecraft with the mod installed in a development environment.
 
+### Version Management
+
+To update the mod version using semantic versioning:
+
+1. Open a terminal in the project directory
+2. Run one of the following commands:
+
+```bash
+# Default: Bump minor version (1.0.0 -> 1.1.0)
+./gradlew setversion
+
+# Bump major version (1.0.0 -> 2.0.0)
+./gradlew setversion --args="major"
+
+# Bump patch version (1.0.0 -> 1.0.1)
+./gradlew setversion --args="patch"
+
+# Show current version
+./gradlew showversion
+```
+
+On Windows, use `gradlew.bat` instead of `./gradlew`.
+
 ### Building the mod
 
 To build the mod for actual use:
