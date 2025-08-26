@@ -30,16 +30,22 @@ object WayfindrNetworkClient {
                     val serverWaypoints = json.decodeFromString<List<WaypointManager.Waypoint>>(jsonData)
                     logger.info("Received waypoint sync with ${serverWaypoints.size} waypoints")
                     
-                    // Get current local waypoints
+                    // Get current local waypoints (non-shared only)
                     val localWaypoints = WaypointManager.waypoints.filter { !it.isShared }
                     
-                    // Combine local non-shared waypoints with server waypoints
-                    val combinedWaypoints = localWaypoints + serverWaypoints
+                    // Create a set of existing waypoint IDs for quick lookup
+                    val existingWaypointIds = WaypointManager.waypoints.map { it.id }.toSet()
+                    
+                    // Filter server waypoints to only include ones that don't already exist locally
+                    val newServerWaypoints = serverWaypoints.filter { !existingWaypointIds.contains(it.id) }
+                    
+                    // Combine local non-shared waypoints with unique server waypoints
+                    val combinedWaypoints = localWaypoints + newServerWaypoints
                     
                     // Use replaceAllWaypoints with the combined list
                     WaypointManager.replaceAllWaypoints(combinedWaypoints)
                     
-                    logger.info("Synchronized ${serverWaypoints.size} shared waypoints from server while preserving ${localWaypoints.size} local waypoints")
+                    logger.info("Synchronized ${newServerWaypoints.size} new shared waypoints from server while preserving ${localWaypoints.size} local waypoints")
                 } catch (e: Exception) {
                     logger.error("Error processing waypoint sync", e)
                 }
@@ -56,10 +62,17 @@ object WayfindrNetworkClient {
                     val waypoint = json.decodeFromString<WaypointManager.Waypoint>(jsonData)
                     logger.info("Adding waypoint from server: ${waypoint.name} (ID: ${waypoint.id}, Owner: ${waypoint.owner})")
                     
-                    // Use addWaypoint method instead of directly modifying the list
-                    WaypointManager.addWaypoint(waypoint)
-                    
-                    logger.info("Added waypoint from server: ${waypoint.name}")
+                    // Check if waypoint with this ID already exists
+                    val existingWaypoint = WaypointManager.getWaypoint(waypoint.id)
+                    if (existingWaypoint != null) {
+                        logger.info("Waypoint with ID ${waypoint.id} already exists, updating instead of adding")
+                        // Update the existing waypoint instead of adding a new one
+                        WaypointManager.updateWaypoint(waypoint)
+                    } else {
+                        // Use addWaypoint method instead of directly modifying the list
+                        WaypointManager.addWaypoint(waypoint)
+                        logger.info("Added waypoint from server: ${waypoint.name}")
+                    }
                 } catch (e: Exception) {
                     logger.error("Error processing waypoint add", e)
                 }
