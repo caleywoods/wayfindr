@@ -51,6 +51,11 @@ object WaypointManager {
     private var navigationTarget: Waypoint? = null
     
     /**
+     * Stores the scroll position in the waypoint list UI.
+     */
+    private var waypointListScrollPosition = 0
+    
+    /**
      * The current world name.
      */
     private var currentWorldName: String = "default"
@@ -275,6 +280,24 @@ object WaypointManager {
      */
     fun getNavigationTarget(): Waypoint? {
         return navigationTarget
+    }
+    
+    /**
+     * Sets the waypoint list scroll position.
+     *
+     * @param position The scroll position to save
+     */
+    fun setWaypointListScrollPosition(position: Int) {
+        waypointListScrollPosition = position
+    }
+    
+    /**
+     * Gets the saved waypoint list scroll position.
+     *
+     * @return The saved scroll position
+     */
+    fun getWaypointListScrollPosition(): Int {
+        return waypointListScrollPosition
     }
     
     /**

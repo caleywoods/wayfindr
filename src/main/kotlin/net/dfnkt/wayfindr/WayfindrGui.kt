@@ -17,6 +17,19 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
     private val BUTTON_SPACING = 2
     private val RIGHT_PANE_Y = 48
     
+    // UI layout constants
+    private val FILTER_BUTTON_Y_OFFSET = 50 // Distance from bottom of screen to filter buttons
+    private val FILTER_BUTTON_MARGIN = 10 // Extra margin between scrollbar and filter buttons
+    
+    // Scrollbar properties
+    private val SCROLLBAR_WIDTH = 6
+    private var scrollbarHeight = 0
+    private var scrollbarY = 0
+    private var scrollbarHandleHeight = 0
+    private var scrollbarHandleY = 0
+    private var isDraggingScrollbar = false
+    private var lastMouseY = 0.0
+    
     // UI components
     private lateinit var searchBox: TextFieldWidget
     private var selectedWaypoint: WaypointManager.Waypoint? = null
@@ -29,6 +42,9 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
     
     override fun init() {
         super.init()
+        
+        // Restore scroll position from manager
+        scrollOffset = WaypointManager.getWaypointListScrollPosition()
         
         // Calculate pane dimensions
         this.paneWidth = this.width / 2 - 8
@@ -56,7 +72,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
                 button.message = Text.literal(if (showPersonalWaypoints) "✓ Personal" else "❌ Personal")
                 refreshWaypointList(RIGHT_PANE_Y)
             }
-                .dimensions(10, height - 80, paneWidth / 2 - 15, BUTTON_HEIGHT)
+                .dimensions(10, height - FILTER_BUTTON_Y_OFFSET, paneWidth / 2 - 15, BUTTON_HEIGHT)
                 .build()
         )
         
@@ -66,7 +82,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
                 button.message = Text.literal(if (showSharedWaypoints) "✓ Shared" else "❌ Shared")
                 refreshWaypointList(RIGHT_PANE_Y)
             }
-                .dimensions(paneWidth / 2 + 5, height - 80, paneWidth / 2 - 15, BUTTON_HEIGHT)
+                .dimensions(paneWidth / 2 + 5, height - FILTER_BUTTON_Y_OFFSET, paneWidth / 2 - 15, BUTTON_HEIGHT)
                 .build()
         )
         
@@ -110,14 +126,14 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         waypointButtons.forEach { remove(it) }
         waypointButtons.clear()
         
-        val listAreaHeight = height - startY - 90 // Adjusted for filter buttons
+        val listAreaHeight = height - startY - (FILTER_BUTTON_Y_OFFSET + FILTER_BUTTON_MARGIN + BUTTON_HEIGHT)
         val maxVisibleWaypoints = maxOf(5, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
         
         val filteredWaypoints = getFilteredWaypoints()
         
         if (filteredWaypoints.isEmpty()) {
             val noWaypointsButton = ButtonWidget.builder(Text.literal("No waypoints found")) {}
-                .dimensions(10, startY + 10, paneWidth - 20, BUTTON_HEIGHT)
+                .dimensions(10 + SCROLLBAR_WIDTH + 4, startY + 10, paneWidth - 20 - SCROLLBAR_WIDTH - 4, BUTTON_HEIGHT)
                 .build()
             addDrawableChild(noWaypointsButton)
             waypointButtons.add(noWaypointsButton)
@@ -142,6 +158,23 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         
         var currentY = startY + 10
         
+        // Calculate scrollbar dimensions
+        scrollbarY = startY + 10
+        scrollbarHeight = listAreaHeight
+        
+        if (filteredWaypoints.size > maxVisibleWaypoints) {
+            val totalContentHeight = filteredWaypoints.size * (BUTTON_HEIGHT + BUTTON_SPACING)
+            val visibleRatio = listAreaHeight.toFloat() / totalContentHeight.toFloat()
+            scrollbarHandleHeight = (scrollbarHeight * visibleRatio).toInt().coerceAtLeast(20)
+            
+            val scrollRatio = startIndex.toFloat() / (filteredWaypoints.size - visibleCount).toFloat()
+            scrollbarHandleY = scrollbarY + ((scrollbarHeight - scrollbarHandleHeight) * scrollRatio).toInt()
+        } else {
+            // If all content fits, make the scrollbar handle fill the entire height
+            scrollbarHandleHeight = scrollbarHeight
+            scrollbarHandleY = scrollbarY
+        }
+        
         // Add waypoint list entries
         visibleWaypoints.forEach { waypoint ->
             // Create a container panel for each waypoint entry
@@ -149,7 +182,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
             val waypointButton = ButtonWidget.builder(buttonText) {
                 selectWaypoint(waypoint.name)
             }
-                .dimensions(10, currentY, paneWidth - 60, BUTTON_HEIGHT)
+                .dimensions(10 + SCROLLBAR_WIDTH + 4, currentY, paneWidth - 60 - SCROLLBAR_WIDTH - 4, BUTTON_HEIGHT)
                 .build()
             
             // Add a visibility indicator
@@ -200,42 +233,6 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
             waypointButtons.add(navigationButton)
             
             currentY += BUTTON_HEIGHT + BUTTON_SPACING
-        }
-        
-        // Add pagination controls if needed
-        if (filteredWaypoints.size > maxVisibleWaypoints) {
-            val paginationY = height - 100 // Adjusted for filter buttons
-            
-            // Up button
-            val upButton = ButtonWidget.builder(Text.literal("↑")) {
-                if (scrollOffset > 0) scrollOffset--
-                refreshWaypointList(startY)
-            }
-                .dimensions(10, paginationY, 30, BUTTON_HEIGHT)
-                .build()
-            
-            addDrawableChild(upButton)
-            waypointButtons.add(upButton)
-            
-            // Down button
-            val downButton = ButtonWidget.builder(Text.literal("↓")) {
-                if (scrollOffset < filteredWaypoints.size - maxVisibleWaypoints) scrollOffset++
-                refreshWaypointList(startY)
-            }
-                .dimensions(paneWidth - 40, paginationY, 30, BUTTON_HEIGHT)
-                .build()
-            
-            addDrawableChild(downButton)
-            waypointButtons.add(downButton)
-            
-            // Scroll indicator
-            val scrollText = "Showing ${startIndex + 1}-$endIndex of ${filteredWaypoints.size}"
-            val scrollIndicator = ButtonWidget.builder(Text.literal(scrollText)) {}
-                .dimensions(45, paginationY, paneWidth - 90, BUTTON_HEIGHT)
-                .build()
-            addDrawableChild(scrollIndicator)
-            waypointButtons.add(scrollIndicator)
-            scrollIndicator.active = false
         }
         
         // If we had a selected waypoint, try to keep it selected
@@ -409,6 +406,16 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         
         val filteredWaypoints = getFilteredWaypoints()
         
+        // Draw scrollbar if needed
+        if (filteredWaypoints.size > 0) {
+            // Draw scrollbar background
+            context.fill(10, scrollbarY, 10 + SCROLLBAR_WIDTH, scrollbarY + scrollbarHeight, 0xFF333333.toInt())
+            
+            // Draw scrollbar handle
+            val handleColor = if (isDraggingScrollbar) 0xFFFFFFFF.toInt() else 0xFFAAAAAA.toInt()
+            context.fill(10, scrollbarHandleY, 10 + SCROLLBAR_WIDTH, scrollbarHandleY + scrollbarHandleHeight, handleColor)
+        }
+        
         super.render(context, mouseX, mouseY, delta)
         
         // Draw title centered in the left pane
@@ -482,7 +489,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         
         if (filteredWaypoints.isEmpty()) return ""
         
-        val listAreaHeight = height - RIGHT_PANE_Y - 90 // Adjusted for filter buttons
+        val listAreaHeight = height - RIGHT_PANE_Y - (FILTER_BUTTON_Y_OFFSET + FILTER_BUTTON_MARGIN + BUTTON_HEIGHT)
         val maxVisibleWaypoints = maxOf(5, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
         val visibleCount = minOf(maxVisibleWaypoints, filteredWaypoints.size)
         val endIndex = minOf(filteredWaypoints.size, scrollOffset + visibleCount)
@@ -512,7 +519,7 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
                 refreshWaypointList(RIGHT_PANE_Y)
                 return true
             } else if (verticalAmount < 0 && WaypointManager.waypoints.size > 0) {
-                val listAreaHeight = height - RIGHT_PANE_Y - 90 // Adjusted for filter buttons
+                val listAreaHeight = height - RIGHT_PANE_Y - (FILTER_BUTTON_Y_OFFSET + FILTER_BUTTON_MARGIN + BUTTON_HEIGHT)
                 val maxVisibleWaypoints = maxOf(5, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
                 
                 if (scrollOffset < WaypointManager.waypoints.size - maxVisibleWaypoints) {
@@ -525,7 +532,58 @@ class WayfindrGui : Screen(Text.literal("Waypoint Manager")) {
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)
     }
     
+    override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        // Check if click is on scrollbar
+        if (button == 0 && mouseX >= 10 && mouseX <= 10 + SCROLLBAR_WIDTH && 
+            mouseY >= scrollbarHandleY && mouseY <= scrollbarHandleY + scrollbarHandleHeight) {
+            isDraggingScrollbar = true
+            lastMouseY = mouseY
+            return true
+        }
+        return super.mouseClicked(mouseX, mouseY, button)
+    }
+    
+    override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        if (button == 0 && isDraggingScrollbar) {
+            isDraggingScrollbar = false
+            return true
+        }
+        return super.mouseReleased(mouseX, mouseY, button)
+    }
+    
+    override fun mouseDragged(mouseX: Double, mouseY: Double, button: Int, deltaX: Double, deltaY: Double): Boolean {
+        if (isDraggingScrollbar) {
+            val filteredWaypoints = getFilteredWaypoints()
+            val listAreaHeight = height - RIGHT_PANE_Y - (FILTER_BUTTON_Y_OFFSET + FILTER_BUTTON_MARGIN + BUTTON_HEIGHT)
+            val maxVisibleWaypoints = maxOf(5, listAreaHeight / (BUTTON_HEIGHT + BUTTON_SPACING))
+            
+            if (filteredWaypoints.size > maxVisibleWaypoints) {
+                val scrollableHeight = scrollbarHeight - scrollbarHandleHeight
+                val deltaScroll = mouseY - lastMouseY
+                
+                if (scrollableHeight > 0) {
+                    val scrollRatio = deltaScroll / scrollableHeight
+                    val scrollAmount = (scrollRatio * (filteredWaypoints.size - maxVisibleWaypoints)).toInt()
+                    
+                    if (scrollAmount != 0) {
+                        scrollOffset = (scrollOffset + scrollAmount).coerceIn(0, filteredWaypoints.size - maxVisibleWaypoints)
+                        refreshWaypointList(RIGHT_PANE_Y)
+                        lastMouseY = mouseY
+                    }
+                }
+            }
+            return true
+        }
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)
+    }
+    
     override fun shouldPause(): Boolean = false
+    
+    override fun close() {
+        // Save scroll position to manager
+        WaypointManager.setWaypointListScrollPosition(scrollOffset)
+        super.close()
+    }
     
     private fun getFilteredWaypoints(): List<WaypointManager.Waypoint> {
         var waypoints = WaypointManager.waypoints
