@@ -13,6 +13,7 @@ class WayfindrConfigScreen(private val parent: Screen?) : Screen(Text.literal("W
     private var maxRaycastDistanceSlider: SliderWidget? = null
     private var openMenuKeyButton: ButtonWidget? = null
     private var quickAddKeyButton: ButtonWidget? = null
+    private var deathWaypointButton: ButtonWidget? = null
     
     private var listeningForKey = false
     private var currentKeyButton: ButtonWidget? = null
@@ -20,6 +21,7 @@ class WayfindrConfigScreen(private val parent: Screen?) : Screen(Text.literal("W
     private var config = WayfindrConfig.get()
     private var openMenuKey = config.openMenuKey
     private var quickAddKey = config.quickAddKey
+    private var createDeathWaypoint = config.createDeathWaypoint
     
     override fun init() {
         maxRenderDistanceSlider = this.addDrawableChild(
@@ -80,6 +82,16 @@ class WayfindrConfigScreen(private val parent: Screen?) : Screen(Text.literal("W
             ).dimensions(width / 2 - 100, height / 4 + 90, 200, 20).build()
         )
         
+        deathWaypointButton = this.addDrawableChild(
+            ButtonWidget.builder(
+                Text.literal("Death Waypoint: ${if (createDeathWaypoint) "Enabled" else "Disabled"}"),
+                { button ->
+                    createDeathWaypoint = !createDeathWaypoint
+                    button.message = Text.literal("Death Waypoint: ${if (createDeathWaypoint) "Enabled" else "Disabled"}")
+                }
+            ).dimensions(width / 2 - 100, height / 4 + 120, 200, 20).build()
+        )
+        
         this.addDrawableChild(
             ButtonWidget.builder(
                 Text.literal("Save"),
@@ -87,7 +99,7 @@ class WayfindrConfigScreen(private val parent: Screen?) : Screen(Text.literal("W
                     saveConfig()
                     close()
                 }
-            ).dimensions(width / 2 - 100, height / 4 + 120, 95, 20).build()
+            ).dimensions(width / 2 - 100, height / 4 + 150, 95, 20).build()
         )
         
         this.addDrawableChild(
@@ -96,7 +108,7 @@ class WayfindrConfigScreen(private val parent: Screen?) : Screen(Text.literal("W
                 { _ ->
                     close()
                 }
-            ).dimensions(width / 2 + 5, height / 4 + 120, 95, 20).build()
+            ).dimensions(width / 2 + 5, height / 4 + 150, 95, 20).build()
         )
     }
     
@@ -121,7 +133,8 @@ class WayfindrConfigScreen(private val parent: Screen?) : Screen(Text.literal("W
             maxRenderDistance = renderSliderValue,
             maxRaycastDistance = raycastSliderValue,
             openMenuKey = openMenuKey,
-            quickAddKey = quickAddKey
+            quickAddKey = quickAddKey,
+            createDeathWaypoint = createDeathWaypoint
         )
         
         WayfindrConfig.update(newConfig)
