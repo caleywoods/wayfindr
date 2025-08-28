@@ -36,6 +36,7 @@
 * Server-synchronized waypoints that can be shared with other players
 * Distinction between personal and shared waypoints
 * Real-time waypoint updates across all connected clients
+* Optional automatic death waypoints to help recover lost items
 
 ## Requirements
 * Minecraft 1.21.4
@@ -64,6 +65,7 @@
 * **Max Waypoint Placement Distance** - How far away you can place waypoints with the quick add key (default: 100 blocks)
 * **Open Menu Key** - Keybinding to open the waypoints manager (default: M)
 * **Quick Add Key** - Keybinding to quickly add a waypoint (default: N)
+* **Death Waypoint** - When enabled, automatically creates a waypoint at your death location (default: Disabled)
 
 ## Navigation Guidance
 The waypoint navigation feature helps guide you to your selected destination:
