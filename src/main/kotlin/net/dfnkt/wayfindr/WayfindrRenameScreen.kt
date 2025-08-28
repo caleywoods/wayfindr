@@ -26,7 +26,6 @@ class WayfindrRenameScreen(
         nameField = TextFieldWidget(textRenderer, centerX - 100, centerY - 20, 200, 20, Text.literal(""))
         nameField.setMaxLength(32)
         nameField.text = waypointName
-        nameField.setFocused(true)
         addDrawableChild(nameField)
         
         // Add Save button
@@ -55,6 +54,8 @@ class WayfindrRenameScreen(
             .dimensions(centerX + 5, centerY + 30, 100, 20)
             .build()
         )
+
+        setInitialFocus(nameField)
     }
     
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
@@ -65,9 +66,35 @@ class WayfindrRenameScreen(
         context.drawCenteredTextWithShadow(textRenderer, Text.literal("Enter new name:"), width / 2, height / 2 - 40, 0xFFFFFF)
     }
     
-    // override fun tick() {
-    //     super.tick()
-    // }
+    override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+        // Handle Enter key to save
+        if (keyCode == 257 || keyCode == 335) { // Enter or numpad Enter
+            val newName = nameField.text.trim()
+            if (newName.isNotEmpty() && newName != waypointName) {
+                val success = WaypointManager.renameWaypoint(waypointName, newName)
+                if (success) {
+                    client?.player?.sendMessage(Text.literal("Renamed waypoint '$waypointName' to '$newName'"), false)
+                } else {
+                    client?.player?.sendMessage(Text.literal("Failed to rename waypoint. Name may already be in use."), false)
+                }
+            }
+            client?.setScreen(parent)
+            return true
+        }
+        
+        // Handle Escape key to cancel
+        if (keyCode == 256) { // Escape
+            client?.setScreen(parent)
+            return true
+        }
+        
+        // Let the text field handle other keys if it's focused
+        if (nameField.isFocused()) {
+            return nameField.keyPressed(keyCode, scanCode, modifiers);
+        }
+        
+        return super.keyPressed(keyCode, scanCode, modifiers)
+    }
     
     override fun shouldPause(): Boolean = false
 }
