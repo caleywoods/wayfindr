@@ -27,6 +27,25 @@ object WayfindrSaveFileHandler {
     private val worldsDir = File(modDir, "worlds")
     
     /**
+     * Ensures that the necessary directories for waypoint storage exist.
+     * 
+     * @return True if directories exist or were successfully created, false otherwise
+     */
+    private fun ensureDirectoriesExist(): Boolean {
+        if (!modDir.exists() && !modDir.mkdirs()) {
+            logger.error("Failed to create directory: ${modDir.absolutePath}")
+            return false
+        }
+        
+        if (!worldsDir.exists() && !worldsDir.mkdirs()) {
+            logger.error("Failed to create worlds directory: ${worldsDir.absolutePath}")
+            return false
+        }
+        
+        return true
+    }
+
+    /**
      * Gets the current world name from the Minecraft client.
      * For singleplayer, this is the level name.
      * For multiplayer, this is the server address.
@@ -37,16 +56,13 @@ object WayfindrSaveFileHandler {
         val client = MinecraftClient.getInstance()
         
         return when {
-            // Singleplayer world
             client.server != null -> {
                 client.server?.saveProperties?.levelName ?: "default"
             }
-            // Multiplayer server
             client.networkHandler != null -> {
                 val serverInfo = client.currentServerEntry
                 serverInfo?.address ?: "default"
             }
-            // Fallback
             else -> "default"
         }
     }
@@ -91,20 +107,13 @@ object WayfindrSaveFileHandler {
      */
     fun saveWaypoint(waypointJson: String) {
         try {
-            if (!modDir.exists() && !modDir.mkdirs()) {
-                logger.error("Failed to create directory: ${modDir.absolutePath}")
+            if (!ensureDirectoriesExist()) {
                 return
             }
             
-            if (!worldsDir.exists() && !worldsDir.mkdirs()) {
-                logger.error("Failed to create worlds directory: ${worldsDir.absolutePath}")
-                return
-            }
-
             val waypointFile = getWorldWaypointFile()
             val newWaypoint = json.decodeFromString<WaypointManager.Waypoint>(waypointJson)
             
-            // Use cached waypoints if available, otherwise read from file
             val waypoints = waypointCache[waypointFile.absolutePath] ?: if (waypointFile.exists()) {
                 try {
                     json.decodeFromString<List<WaypointManager.Waypoint>>(waypointFile.readText())
@@ -116,7 +125,6 @@ object WayfindrSaveFileHandler {
                 listOf()
             }
 
-            // Replace existing waypoint with same ID (if any) to avoid duplicate entries
             val existingIndex = waypoints.indexOfFirst { it.id == newWaypoint.id }
             val updatedWaypoints = if (existingIndex >= 0) {
                 logger.warn("Duplicate waypoint ID detected on save; replacing existing entry: ${newWaypoint.id}")
@@ -125,10 +133,8 @@ object WayfindrSaveFileHandler {
                 waypoints + newWaypoint
             }
             
-            // Update the cache
             waypointCache[waypointFile.absolutePath] = updatedWaypoints
             
-            // Write to file
             waypointFile.writeText(json.encodeToString(updatedWaypoints))
 
             logger.info("Saved waypoint to ${waypointFile.absolutePath}")
@@ -151,7 +157,6 @@ object WayfindrSaveFileHandler {
         return try {
             val waypointFile = getWorldWaypointFile()
             
-            // Check if we have cached waypoints
             waypointCache[waypointFile.absolutePath]?.let { 
                 return it 
             }
@@ -160,7 +165,6 @@ object WayfindrSaveFileHandler {
                 val jsonContent = waypointFile.readText()
                 if (jsonContent.isNotBlank()) {
                     val waypoints = json.decodeFromString<List<WaypointManager.Waypoint>>(jsonContent)
-                    // Update cache
                     waypointCache[waypointFile.absolutePath] = waypoints
                     waypoints
                 } else {
@@ -189,19 +193,12 @@ object WayfindrSaveFileHandler {
      */
     fun saveAllWaypoints(waypoints: List<WaypointManager.Waypoint>) {
         try {
-            if (!modDir.exists() && !modDir.mkdirs()) {
-                logger.error("Failed to create directory: ${modDir.absolutePath}")
-                return
-            }
-            
-            if (!worldsDir.exists() && !worldsDir.mkdirs()) {
-                logger.error("Failed to create worlds directory: ${worldsDir.absolutePath}")
+            if (!ensureDirectoriesExist()) {
                 return
             }
             
             val waypointFile = getWorldWaypointFile()
             
-            // Update cache
             waypointCache[waypointFile.absolutePath] = waypoints
             
             waypointFile.writeText(json.encodeToString(waypoints))

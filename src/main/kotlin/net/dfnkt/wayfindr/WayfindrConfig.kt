@@ -66,20 +66,8 @@ data class WayfindrConfig(
         }
         
         fun update(newConfig: WayfindrConfig) {
-            val oldConfig = instance
             instance = newConfig
             save()
-            
-            // Notify that config has changed
-            if (oldConfig.openMenuKey != newConfig.openMenuKey || 
-                oldConfig.quickAddKey != newConfig.quickAddKey) {
-                // Inform player that keybindings are managed via the Controls menu
-                val client = MinecraftClient.getInstance()
-                client.player?.sendMessage(
-                    Text.literal("§6[Wayfindr]§r Keybindings are configured via Minecraft: Options > Controls > Key Binds (Wayfindr). Changes in this screen won't affect keybinds."), 
-                    false
-                )
-            }
         }
     }
 }
