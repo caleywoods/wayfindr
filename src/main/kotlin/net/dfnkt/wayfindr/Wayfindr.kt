@@ -25,16 +25,9 @@ object Wayfindr : ModInitializer {
 	 * Registers server lifecycle events for server-side waypoint management.
 	 */
 	private fun registerServerEvents() {
-		// Initialize server components when server starts
 		ServerLifecycleEvents.SERVER_STARTING.register { server ->
 			logger.info("Initializing server-side waypoint management")
 			ServerWaypointManager.initialize(server)
-		}
-		
-		// Save waypoints when server stops (if needed, though our implementation saves on each change)
-		ServerLifecycleEvents.SERVER_STOPPING.register { server ->
-			logger.info("Server stopping, ensuring waypoints are saved")
-			// No explicit action needed as we save on each change
 		}
 	}
 }
