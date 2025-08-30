@@ -86,7 +86,7 @@ object WayfindrModClient : ClientModInitializer {
                 mcClient.setScreen(WayfindrGui())
             }
             
-            while (quickAddWaypoint.wasPressed()) {
+            if (quickAddWaypoint.wasPressed()) {
                 val player = mcClient.player
                 if (player != null) {
                     val waypointName = "Quick Waypoint ${WaypointManager.waypoints.size + 1}"

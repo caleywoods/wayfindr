@@ -116,7 +116,14 @@ object WayfindrSaveFileHandler {
                 listOf()
             }
 
-            val updatedWaypoints = waypoints + newWaypoint
+            // Replace existing waypoint with same ID (if any) to avoid duplicate entries
+            val existingIndex = waypoints.indexOfFirst { it.id == newWaypoint.id }
+            val updatedWaypoints = if (existingIndex >= 0) {
+                logger.warn("Duplicate waypoint ID detected on save; replacing existing entry: ${newWaypoint.id}")
+                waypoints.toMutableList().also { it[existingIndex] = newWaypoint }
+            } else {
+                waypoints + newWaypoint
+            }
             
             // Update the cache
             waypointCache[waypointFile.absolutePath] = updatedWaypoints

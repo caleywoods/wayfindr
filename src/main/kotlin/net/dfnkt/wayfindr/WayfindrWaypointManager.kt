@@ -91,7 +91,18 @@ object WaypointManager {
             navigationTarget = null
         }
         
-        waypoints = saveHandler.loadWaypoints().toMutableList()
+        val loaded = saveHandler.loadWaypoints()
+        // Deduplicate by ID, keeping the last occurrence from disk
+        val map = linkedMapOf<UUID, Waypoint>()
+        for (wp in loaded) {
+            map[wp.id] = wp
+        }
+        val deduped = map.values.toList()
+        waypoints = deduped.toMutableList()
+        if (deduped.size != loaded.size) {
+            logger.warn("Detected ${loaded.size - deduped.size} duplicate waypoint(s) by ID in '$currentWorldName'; cleaned and resaved")
+            saveHandler.saveAllWaypoints(waypoints)
+        }
         logger.info("Loaded ${waypoints.size} waypoints for world '$currentWorldName'")
     }
     
@@ -107,12 +118,7 @@ object WaypointManager {
      */
     fun addWaypoint(name: String, position: Vec3d, color: Int = 0xFF0000, dimension: String = "minecraft:overworld", visible: Boolean = true): Waypoint {
         val waypoint = Waypoint(name, SerializableVec3d(position.x, position.y, position.z), color, dimension, visible)
-        waypoints.add(waypoint)
-        
-        val waypointJson = json.encodeToString(waypoint)
-        saveHandler.saveWaypoint(waypointJson)
-        
-        return waypoint
+        return addWaypoint(waypoint)
     }
     
     /**
@@ -122,11 +128,16 @@ object WaypointManager {
      * @return The added waypoint
      */
     fun addWaypoint(waypoint: Waypoint): Waypoint {
-        waypoints.add(waypoint)
-        
-        val waypointJson = json.encodeToString(waypoint)
-        saveHandler.saveWaypoint(waypointJson)
-        
+        val existingIndex = waypoints.indexOfFirst { it.id == waypoint.id }
+        if (existingIndex >= 0) {
+            // Replace existing entry with the same ID
+            waypoints[existingIndex] = waypoint
+            saveHandler.saveAllWaypoints(waypoints)
+        } else {
+            waypoints.add(waypoint)
+            val waypointJson = json.encodeToString(waypoint)
+            saveHandler.saveWaypoint(waypointJson)
+        }
         return waypoint
     }
     
