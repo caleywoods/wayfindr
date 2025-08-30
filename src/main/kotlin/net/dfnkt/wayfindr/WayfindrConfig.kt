@@ -5,8 +5,6 @@ import kotlinx.serialization.json.Json
 import org.lwjgl.glfw.GLFW
 import java.io.File
 import org.slf4j.LoggerFactory
-import net.minecraft.client.MinecraftClient
-import net.minecraft.text.Text
 
 @Serializable
 data class WayfindrConfig(

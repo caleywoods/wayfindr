@@ -3,7 +3,6 @@ package net.dfnkt.wayfindr
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.concurrent.ConcurrentHashMap
 import net.minecraft.client.MinecraftClient
 
 /**

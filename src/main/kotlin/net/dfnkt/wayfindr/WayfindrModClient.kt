@@ -11,7 +11,6 @@ import kotlin.random.Random
 import org.slf4j.LoggerFactory
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import org.lwjgl.glfw.GLFW

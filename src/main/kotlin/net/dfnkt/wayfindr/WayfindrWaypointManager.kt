@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 import java.util.UUID
 import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
 
 /**
  * Manages waypoints for the Wayfindr mod.

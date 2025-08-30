@@ -1,8 +1,6 @@
 package net.dfnkt.wayfindr
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.util.UUID
