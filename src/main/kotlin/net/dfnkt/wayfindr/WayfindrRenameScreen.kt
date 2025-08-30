@@ -7,10 +7,12 @@ import net.minecraft.client.gui.DrawContext
 import net.minecraft.text.Text
 import net.minecraft.client.MinecraftClient
 import net.dfnkt.wayfindr.WaypointManager
+import java.util.UUID
 
 class WayfindrRenameScreen(
     private val parent: Screen,
-    private val waypointName: String
+    private val waypointId: UUID,
+    private val currentName: String
 ) : Screen(Text.literal("Rename Waypoint")) {
     
     private lateinit var nameField: TextFieldWidget
@@ -25,17 +27,17 @@ class WayfindrRenameScreen(
         // Create text field for the new name
         nameField = TextFieldWidget(textRenderer, centerX - 100, centerY - 20, 200, 20, Text.literal(""))
         nameField.setMaxLength(32)
-        nameField.text = waypointName
+        nameField.text = currentName
         addDrawableChild(nameField)
         
         // Add Save button
         addDrawableChild(
             ButtonWidget.builder(Text.literal("Save")) {
                 val newName = nameField.text.trim()
-                if (newName.isNotEmpty() && newName != waypointName) {
-                    val success = WaypointManager.renameWaypoint(waypointName, newName)
+                if (newName.isNotEmpty() && newName != currentName) {
+                    val success = WaypointManager.renameWaypoint(waypointId, newName)
                     if (success) {
-                        client?.player?.sendMessage(Text.literal("Renamed waypoint '$waypointName' to '$newName'"), false)
+                        client?.player?.sendMessage(Text.literal("Renamed waypoint '$currentName' to '$newName'"), false)
                     } else {
                         client?.player?.sendMessage(Text.literal("Failed to rename waypoint. Name may already be in use."), false)
                     }
@@ -70,10 +72,10 @@ class WayfindrRenameScreen(
         // Handle Enter key to save
         if (keyCode == 257 || keyCode == 335) { // Enter or numpad Enter
             val newName = nameField.text.trim()
-            if (newName.isNotEmpty() && newName != waypointName) {
-                val success = WaypointManager.renameWaypoint(waypointName, newName)
+            if (newName.isNotEmpty() && newName != currentName) {
+                val success = WaypointManager.renameWaypoint(waypointId, newName)
                 if (success) {
-                    client?.player?.sendMessage(Text.literal("Renamed waypoint '$waypointName' to '$newName'"), false)
+                    client?.player?.sendMessage(Text.literal("Renamed waypoint '$currentName' to '$newName'"), false)
                 } else {
                     client?.player?.sendMessage(Text.literal("Failed to rename waypoint. Name may already be in use."), false)
                 }

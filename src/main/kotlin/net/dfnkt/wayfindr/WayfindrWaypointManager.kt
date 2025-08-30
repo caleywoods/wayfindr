@@ -48,7 +48,7 @@ object WaypointManager {
     /**
      * The currently active navigation waypoint, if any.
      */
-    private var navigationTarget: Waypoint? = null
+    private var navigationTarget: UUID? = null
     
     /**
      * Stores the scroll position in the waypoint list UI.
@@ -142,40 +142,20 @@ object WaypointManager {
     }
     
     /**
-     * Removes a waypoint with the given name.
-     * 
-     * @param name The name of the waypoint to remove
-     * @return True if the waypoint was found and removed, false otherwise
-     */
-    fun removeWaypoint(name: String): Boolean {
-        val waypoint = waypoints.find { it.name == name } ?: return false
-        waypoints.remove(waypoint)
-        saveHandler.saveAllWaypoints(waypoints)
-        return true
-    }
-    
-    /**
-     * Removes a waypoint with the given UUID.
+     * Removes a waypoint by its unique identifier.
      * 
      * @param id The UUID of the waypoint to remove
      * @return True if the waypoint was found and removed, false otherwise
      */
     fun removeWaypoint(id: UUID): Boolean {
-        val waypoint = waypoints.find { it.id == id } ?: return false
+        val waypoint = getWaypoint(id) ?: return false
         waypoints.remove(waypoint)
-        saveHandler.saveAllWaypoints(waypoints)
-        return true
-    }
-    
-    /**
-     * Removes a waypoint at the specified index.
-     * 
-     * @param index The index of the waypoint to remove
-     * @return True if the index was valid and the waypoint was removed, false otherwise
-     */
-    fun removeWaypoint(index: Int): Boolean {
-        if (index < 0 || index >= waypoints.size) return false
-        waypoints.removeAt(index)
+        
+        // Clear navigation if this was the target
+        if (navigationTarget == id) {
+            navigationTarget = null
+        }
+        
         saveHandler.saveAllWaypoints(waypoints)
         return true
     }
@@ -205,57 +185,6 @@ object WaypointManager {
     }
     
     /**
-     * Renames a waypoint.
-     * 
-     * @param oldName The current name of the waypoint
-     * @param newName The new name for the waypoint
-     * @return True if the waypoint was found and renamed, false otherwise
-     */
-    fun renameWaypoint(oldName: String, newName: String): Boolean {
-        val waypoint = waypoints.find { it.name == oldName } ?: return false
-        waypoint.name = newName
-        saveHandler.saveAllWaypoints(waypoints)
-        return true
-    }
-    
-    /**
-     * Toggles the visibility of a waypoint.
-     * 
-     * @param name The name of the waypoint to toggle
-     * @return True if the waypoint was found and its visibility toggled, false otherwise
-     */
-    fun toggleWaypointVisibility(name: String): Boolean {
-        val waypoint = waypoints.find { it.name == name } ?: return false
-        waypoint.visible = !waypoint.visible
-        saveHandler.saveAllWaypoints(waypoints)
-        return true
-    }
-    
-    /**
-     * Changes the color of a waypoint.
-     * 
-     * @param name The name of the waypoint
-     * @param color The new color in RGB format
-     * @return True if the waypoint was found and its color changed, false otherwise
-     */
-    fun changeWaypointColor(name: String, color: Int): Boolean {
-        val waypoint = waypoints.find { it.name == name } ?: return false
-        waypoint.color = color
-        saveHandler.saveAllWaypoints(waypoints)
-        return true
-    }
-    
-    /**
-     * Gets a waypoint by its name.
-     * 
-     * @param name The name of the waypoint to retrieve
-     * @return The waypoint if found, null otherwise
-     */
-    fun getWaypoint(name: String): Waypoint? {
-        return waypoints.find { it.name == name }
-    }
-    
-    /**
      * Gets a waypoint by its unique ID.
      * 
      * @param id The UUID of the waypoint to retrieve
@@ -266,14 +195,26 @@ object WaypointManager {
     }
     
     /**
+     * Gets a waypoint by its name.
+     * Note: This is provided for backward compatibility and UI convenience.
+     * If multiple waypoints have the same name, returns the first one found.
+     * 
+     * @param name The name of the waypoint to retrieve
+     * @return The waypoint if found, null otherwise
+     */
+    fun getWaypointByName(name: String): Waypoint? {
+        return waypoints.find { it.name == name }
+    }
+    
+    /**
      * Sets a waypoint as the current navigation target.
      *
-     * @param name The name of the waypoint to navigate to
+     * @param id The UUID of the waypoint to navigate to
      * @return True if the waypoint was found and set as navigation target, false otherwise
      */
-    fun setNavigationTarget(name: String): Boolean {
-        val waypoint = waypoints.find { it.name == name } ?: return false
-        navigationTarget = waypoint
+    fun setNavigationTarget(id: UUID): Boolean {
+        if (getWaypoint(id) == null) return false
+        navigationTarget = id
         return true
     }
     
@@ -290,7 +231,17 @@ object WaypointManager {
      * @return The current navigation target waypoint, or null if none is set
      */
     fun getNavigationTarget(): Waypoint? {
-        return navigationTarget
+        return navigationTarget?.let { getWaypoint(it) }
+    }
+    
+    /**
+     * Checks if the given waypoint is the current navigation target.
+     *
+     * @param id The UUID of the waypoint to check
+     * @return True if the waypoint is the current navigation target, false otherwise
+     */
+    fun isNavigationTarget(id: UUID): Boolean {
+        return navigationTarget == id
     }
     
     /**
@@ -312,16 +263,6 @@ object WaypointManager {
     }
     
     /**
-     * Checks if the given waypoint is the current navigation target.
-     *
-     * @param name The name of the waypoint to check
-     * @return True if the waypoint is the current navigation target, false otherwise
-     */
-    fun isNavigationTarget(name: String): Boolean {
-        return navigationTarget?.name == name
-    }
-    
-    /**
      * Checks if the player is within the deadzone of the current navigation target.
      * The player must be within the threshold distance in all three dimensions (X, Y, Z).
      *
@@ -329,7 +270,7 @@ object WaypointManager {
      * @return True if the player is within the deadzone, false otherwise or if no navigation target is set
      */
     fun isWithinDeadzone(playerPos: Vec3d): Boolean {
-        val target = navigationTarget ?: return false
+        val target = getNavigationTarget() ?: return false
         val waypointPos = target.getPosition()
         
         // Check if the player is within the threshold distance in all three dimensions
@@ -360,6 +301,47 @@ object WaypointManager {
         saveHandler.saveAllWaypoints(waypoints)
     }
     
+    /**
+     * Toggles the visibility of a waypoint.
+     * 
+     * @param id The UUID of the waypoint to toggle
+     * @return True if the waypoint was found and its visibility toggled, false otherwise
+     */
+    fun toggleWaypointVisibility(id: UUID): Boolean {
+        val waypoint = getWaypoint(id) ?: return false
+        waypoint.visible = !waypoint.visible
+        saveHandler.saveAllWaypoints(waypoints)
+        return true
+    }
+    
+    /**
+     * Changes the color of a waypoint.
+     * 
+     * @param id The UUID of the waypoint
+     * @param color The new color in RGB format
+     * @return True if the waypoint was found and its color changed, false otherwise
+     */
+    fun changeWaypointColor(id: UUID, color: Int): Boolean {
+        val waypoint = getWaypoint(id) ?: return false
+        waypoint.color = color
+        saveHandler.saveAllWaypoints(waypoints)
+        return true
+    }
+    
+    /**
+     * Renames a waypoint.
+     * 
+     * @param id The UUID of the waypoint to rename
+     * @param newName The new name for the waypoint
+     * @return True if the waypoint was found and renamed, false otherwise
+     */
+    fun renameWaypoint(id: UUID, newName: String): Boolean {
+        val waypoint = getWaypoint(id) ?: return false
+        waypoint.name = newName
+        saveHandler.saveAllWaypoints(waypoints)
+        return true
+    }
+
     /**
      * Represents a waypoint in the game world.
      * 

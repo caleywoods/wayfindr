@@ -21,9 +21,9 @@ object WayfindrCommands {
      * Registers all Wayfindr commands with the Minecraft command system.
      * 
      * Command structure:
-     * - /waypoint add <name> [color] - Add waypoint at crosshair target
-     * - /waypoint addhere <name> [color] - Add waypoint at player position
-     * - /waypoint delete <name> - Delete waypoint by name
+     * - /waypoint add <n> [color] - Add waypoint at crosshair target
+     * - /waypoint addhere <n> [color] - Add waypoint at player position
+     * - /waypoint delete <n> - Delete waypoint by name
      */
     fun register() {
         CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
@@ -68,14 +68,23 @@ object WayfindrCommands {
                             .then(
                                 CommandManager.argument("name", StringArgumentType.string())
                                     .executes { context ->
-                                        val name = StringArgumentType.getString(context, "name");
-
-                                        WaypointManager.removeWaypoint(name)
-                                        context.source.sendFeedback(
-                                            { Text.literal("Removed waypoint '$name'") },
-                                            false
-                                        )
-                                        return@executes 1;
+                                        val name = StringArgumentType.getString(context, "name")
+                                        
+                                        // Find waypoint by name first, then remove by UUID
+                                        val waypoint = WaypointManager.getWaypointByName(name)
+                                        if (waypoint != null) {
+                                            WaypointManager.removeWaypoint(waypoint.id)
+                                            context.source.sendFeedback(
+                                                { Text.literal("Removed waypoint '$name'") },
+                                                false
+                                            )
+                                        } else {
+                                            context.source.sendFeedback(
+                                                { Text.literal("No waypoint found with name '$name'") },
+                                                false
+                                            )
+                                        }
+                                        return@executes 1
                                     }
                             )
                     )
@@ -110,7 +119,7 @@ object WayfindrCommands {
         val finalColor = colorInt ?: 0xFF0000 // Default red
 
         // Add waypoint to the manager
-        WaypointManager.addWaypoint(name, position, finalColor)
+        val waypoint = WaypointManager.addWaypoint(name, position, finalColor)
 
         // Feedback to player with placement mode info
         val placementMode = if (usePlayerPosition) "at your location" else "at crosshair target"
