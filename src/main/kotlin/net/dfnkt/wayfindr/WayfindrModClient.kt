@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import org.lwjgl.glfw.GLFW
 
 object WayfindrModClient : ClientModInitializer {
 
@@ -22,22 +23,20 @@ object WayfindrModClient : ClientModInitializer {
     private val logger = LoggerFactory.getLogger("wayfindr")
     
     private fun registerKeybindings() {
-        val config = WayfindrConfig.get()
-        
         openWaypointMenu = KeyBindingHelper.registerKeyBinding(
             KeyBinding(
                 "key.wayfindr.open_menu",
                 InputUtil.Type.KEYSYM,
-                config.openMenuKey,
+                GLFW.GLFW_KEY_M, // Default 'M'
                 "category.wayfindr.general"
             )
         )
-        
+
         quickAddWaypoint = KeyBindingHelper.registerKeyBinding(
             KeyBinding(
                 "key.wayfindr.quick_add",
                 InputUtil.Type.KEYSYM,
-                config.quickAddKey,
+                GLFW.GLFW_KEY_N, // Default 'N'
                 "category.wayfindr.general"
             )
         )

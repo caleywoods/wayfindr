@@ -60,11 +60,17 @@
 * `N` - Quick add a waypoint of a random color at the crosshair location
 * `M` - Open the waypoints manager to view and delete waypoints
 
+## Changing Keybindings
+Use Minecraft's Controls menu:
+1. Open Options > Controls > Key Binds
+2. Search for "Wayfindr"
+3. Rebind "Open Menu" and "Quick Add" as desired
+
+Note: The Wayfindr Settings screen does not change keybinds; use the Controls menu instead.
+
 ## Configuration Options
 * **Max Waypoint Render Distance** - How far away waypoints will be visible (default: 100 blocks)
 * **Max Waypoint Placement Distance** - How far away you can place waypoints with the quick add key (default: 100 blocks)
-* **Open Menu Key** - Keybinding to open the waypoints manager (default: M)
-* **Quick Add Key** - Keybinding to quickly add a waypoint (default: N)
 * **Death Waypoint** - When enabled, automatically creates a waypoint at your death location (default: Disabled)
 
 ## Navigation Guidance

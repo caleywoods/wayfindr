@@ -3,24 +3,15 @@ package net.dfnkt.wayfindr
 import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.widget.ButtonWidget
 import net.minecraft.text.Text
-import net.minecraft.client.util.InputUtil
 import net.minecraft.client.gui.widget.SliderWidget
-import org.lwjgl.glfw.GLFW
 import kotlin.math.roundToInt
 
 class WayfindrConfigScreen(private val parent: Screen?) : Screen(Text.literal("Wayfindr Configuration")) {
     private var maxRenderDistanceSlider: SliderWidget? = null
     private var maxRaycastDistanceSlider: SliderWidget? = null
-    private var openMenuKeyButton: ButtonWidget? = null
-    private var quickAddKeyButton: ButtonWidget? = null
     private var deathWaypointButton: ButtonWidget? = null
     
-    private var listeningForKey = false
-    private var currentKeyButton: ButtonWidget? = null
-    
     private var config = WayfindrConfig.get()
-    private var openMenuKey = config.openMenuKey
-    private var quickAddKey = config.quickAddKey
     private var createDeathWaypoint = config.createDeathWaypoint
     
     override fun init() {
@@ -60,28 +51,6 @@ class WayfindrConfigScreen(private val parent: Screen?) : Screen(Text.literal("W
             }
         )
         
-        openMenuKeyButton = this.addDrawableChild(
-            ButtonWidget.builder(
-                Text.literal("Open Menu Key: ${getKeyName(openMenuKey)}"),
-                { button ->
-                    listeningForKey = true
-                    currentKeyButton = button
-                    button.message = Text.literal("Press a key...")
-                }
-            ).dimensions(width / 2 - 100, height / 4 + 60, 200, 20).build()
-        )
-        
-        quickAddKeyButton = this.addDrawableChild(
-            ButtonWidget.builder(
-                Text.literal("Quick Add Key: ${getKeyName(quickAddKey)}"),
-                { button ->
-                    listeningForKey = true
-                    currentKeyButton = button
-                    button.message = Text.literal("Press a key...")
-                }
-            ).dimensions(width / 2 - 100, height / 4 + 90, 200, 20).build()
-        )
-        
         deathWaypointButton = this.addDrawableChild(
             ButtonWidget.builder(
                 Text.literal("Death Waypoint: ${if (createDeathWaypoint) "Enabled" else "Disabled"}"),
@@ -113,11 +82,9 @@ class WayfindrConfigScreen(private val parent: Screen?) : Screen(Text.literal("W
     }
     
     private fun saveConfig() {
-        // For SliderWidget, we need to parse the value from the message text since 'value' is protected
         val renderSliderText = maxRenderDistanceSlider?.message?.string ?: ""
         val raycastSliderText = maxRaycastDistanceSlider?.message?.string ?: ""
         
-        // Extract the numeric value from the text using regex
         val renderDistanceRegex = "Max Waypoint Render Distance: (\\d+)".toRegex()
         val raycastDistanceRegex = "Max Waypoint Placement Distance: (\\d+)".toRegex()
         
@@ -132,42 +99,12 @@ class WayfindrConfigScreen(private val parent: Screen?) : Screen(Text.literal("W
         val newConfig = WayfindrConfig(
             maxRenderDistance = renderSliderValue,
             maxRaycastDistance = raycastSliderValue,
-            openMenuKey = openMenuKey,
-            quickAddKey = quickAddKey,
+            openMenuKey = config.openMenuKey,
+            quickAddKey = config.quickAddKey,
             createDeathWaypoint = createDeathWaypoint
         )
         
         WayfindrConfig.update(newConfig)
-    }
-    
-    private fun getKeyName(keyCode: Int): String {
-        return InputUtil.fromKeyCode(keyCode, 0).localizedText.string
-    }
-    
-    override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
-        if (listeningForKey) {
-            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-                listeningForKey = false
-                updateKeyButtonText()
-                return true
-            }
-            
-            when (currentKeyButton) {
-                openMenuKeyButton -> openMenuKey = keyCode
-                quickAddKeyButton -> quickAddKey = keyCode
-            }
-            
-            listeningForKey = false
-            updateKeyButtonText()
-            return true
-        }
-        
-        return super.keyPressed(keyCode, scanCode, modifiers)
-    }
-    
-    private fun updateKeyButtonText() {
-        openMenuKeyButton?.message = Text.literal("Open Menu Key: ${getKeyName(openMenuKey)}")
-        quickAddKeyButton?.message = Text.literal("Quick Add Key: ${getKeyName(quickAddKey)}")
     }
     
     override fun close() {

@@ -73,11 +73,10 @@ data class WayfindrConfig(
             // Notify that config has changed
             if (oldConfig.openMenuKey != newConfig.openMenuKey || 
                 oldConfig.quickAddKey != newConfig.quickAddKey) {
-                // Show a message to the player that they need to restart the game
-                // for keybinding changes to take effect
+                // Inform player that keybindings are managed via the Controls menu
                 val client = MinecraftClient.getInstance()
                 client.player?.sendMessage(
-                    Text.literal("§6[Wayfindr]§r Keybindings updated. Please restart the game for changes to take effect."), 
+                    Text.literal("§6[Wayfindr]§r Keybindings are configured via Minecraft: Options > Controls > Key Binds (Wayfindr). Changes in this screen won't affect keybinds."), 
                     false
                 )
             }
