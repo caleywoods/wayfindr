@@ -337,6 +337,11 @@ object WaypointManager {
         val waypoint = getWaypoint(id) ?: return false
         waypoint.name = newName
         saveHandler.saveAllWaypoints(waypoints)
+        
+        if (waypoint.isShared) {
+            WayfindrNetworkClient.sendWaypointUpdateToServer(waypoint)
+        }
+        
         return true
     }
 
