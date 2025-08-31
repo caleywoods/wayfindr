@@ -13,7 +13,7 @@
 ## Screenshots
 
 ### Waypoints in the World
-![Waypoints in the world](https://github.com/caleywoods/wayfindr/blob/main/res/Waypoints4.png?raw=true)
+![Waypoints in the world](https://github.com/caleywoods/wayfindr/blob/main/res/Waypoints.png?raw=true)
 
 ### Waypoint navigation
 ![Waypoints in the world](https://github.com/caleywoods/wayfindr/blob/main/res/Navigation.png?raw=true)
