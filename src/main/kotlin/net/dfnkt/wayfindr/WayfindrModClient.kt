@@ -21,10 +21,11 @@ object WayfindrModClient : ClientModInitializer {
 
     private val logger = LoggerFactory.getLogger("wayfindr")
     
-    // Define a unique identifier for our HUD layer
     private val NAVIGATION_LAYER_ID = Identifier.of(Wayfindr.MOD_ID, "navigation_layer")
     
     override fun onInitializeClient() {
+        WayfindrKeybinds.initialize()
+        
         WayfindrConfig.load()
         
         WaypointManager.initializeWaypoints()
@@ -62,7 +63,6 @@ object WayfindrModClient : ClientModInitializer {
                 }
             )
             
-            // Add our layer to the HUD
             layeredDrawer.addLayer(navigationLayer)
         }
         

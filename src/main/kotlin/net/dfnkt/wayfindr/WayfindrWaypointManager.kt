@@ -134,8 +134,7 @@ object WaypointManager {
             saveHandler.saveAllWaypoints(waypoints)
         } else {
             waypoints.add(waypoint)
-            val waypointJson = json.encodeToString(waypoint)
-            saveHandler.saveWaypoint(waypointJson)
+            saveHandler.saveWaypoint(json.encodeToString(waypoint))
         }
         return waypoint
     }
