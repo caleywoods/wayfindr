@@ -53,13 +53,10 @@ object WayfindrModClient : ClientModInitializer {
         
         WaypointManager.initializeWaypoints()
         
-        // Register world change events to reload waypoints
         registerWorldChangeEvents()
         
-        // Register player death event handler
         registerPlayerDeathHandler()
         
-        // Initialize network handlers for waypoint synchronization
         WayfindrNetworkClient.initialize()
         
         WorldRenderEvents.AFTER_TRANSLUCENT.register { context ->
@@ -78,9 +75,7 @@ object WayfindrModClient : ClientModInitializer {
             }
         }
         
-        // Register our navigation HUD layer using the new API
         HudLayerRegistrationCallback.EVENT.register { layeredDrawer ->
-            // Create a layer renderer that will draw our navigation
             val navigationLayer = IdentifiedLayer.of(
                 NAVIGATION_LAYER_ID,
                 { context, tickCounter ->
