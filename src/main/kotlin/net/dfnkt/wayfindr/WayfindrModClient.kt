@@ -9,8 +9,10 @@ import net.minecraft.client.option.KeyBinding
 import net.minecraft.client.util.InputUtil
 import kotlin.random.Random
 import org.slf4j.LoggerFactory
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
+import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback
+import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
+import net.minecraft.util.Identifier
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import org.lwjgl.glfw.GLFW
@@ -20,6 +22,9 @@ object WayfindrModClient : ClientModInitializer {
     private lateinit var openWaypointMenu: KeyBinding
     private lateinit var quickAddWaypoint: KeyBinding
     private val logger = LoggerFactory.getLogger("wayfindr")
+    
+    // Define a unique identifier for our HUD layer
+    private val NAVIGATION_LAYER_ID = Identifier.of(Wayfindr.MOD_ID, "navigation_layer")
     
     private fun registerKeybindings() {
         openWaypointMenu = KeyBindingHelper.registerKeyBinding(
@@ -73,11 +78,21 @@ object WayfindrModClient : ClientModInitializer {
             }
         }
         
-        HudRenderCallback.EVENT.register { drawContext, _ ->
-            val client = MinecraftClient.getInstance()
-            if (client.currentScreen == null && !client.isPaused) {
-                WayfindrNavigationRenderer.render(drawContext)
-            }
+        // Register our navigation HUD layer using the new API
+        HudLayerRegistrationCallback.EVENT.register { layeredDrawer ->
+            // Create a layer renderer that will draw our navigation
+            val navigationLayer = IdentifiedLayer.of(
+                NAVIGATION_LAYER_ID,
+                { context, tickCounter ->
+                    val client = MinecraftClient.getInstance()
+                    if (client.currentScreen == null && !client.isPaused) {
+                        WayfindrNavigationRenderer.render(context)
+                    }
+                }
+            )
+            
+            // Add our layer to the HUD
+            layeredDrawer.addLayer(navigationLayer)
         }
         
         ClientTickEvents.END_CLIENT_TICK.register { mcClient ->
