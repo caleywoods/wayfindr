@@ -41,3 +41,5 @@ jobs:
           generate_release_notes: true
           files: |
             build/libs/*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
