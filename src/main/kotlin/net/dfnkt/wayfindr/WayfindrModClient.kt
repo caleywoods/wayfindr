@@ -19,37 +19,13 @@ import org.lwjgl.glfw.GLFW
 
 object WayfindrModClient : ClientModInitializer {
 
-    private lateinit var openWaypointMenu: KeyBinding
-    private lateinit var quickAddWaypoint: KeyBinding
     private val logger = LoggerFactory.getLogger("wayfindr")
     
     // Define a unique identifier for our HUD layer
     private val NAVIGATION_LAYER_ID = Identifier.of(Wayfindr.MOD_ID, "navigation_layer")
     
-    private fun registerKeybindings() {
-        openWaypointMenu = KeyBindingHelper.registerKeyBinding(
-            KeyBinding(
-                "key.wayfindr.open_menu",
-                InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_M, // Default 'M'
-                "category.wayfindr.general"
-            )
-        )
-
-        quickAddWaypoint = KeyBindingHelper.registerKeyBinding(
-            KeyBinding(
-                "key.wayfindr.quick_add",
-                InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_N, // Default 'N'
-                "category.wayfindr.general"
-            )
-        )
-    }
-    
     override fun onInitializeClient() {
         WayfindrConfig.load()
-        
-        registerKeybindings()
         
         WaypointManager.initializeWaypoints()
         
@@ -91,11 +67,11 @@ object WayfindrModClient : ClientModInitializer {
         }
         
         ClientTickEvents.END_CLIENT_TICK.register { mcClient ->
-            while (openWaypointMenu.wasPressed()) {
+            while (WayfindrKeybinds.OPEN_WAYPOINT_MENU.wasPressed()) {
                 mcClient.setScreen(WayfindrGui())
             }
             
-            if (quickAddWaypoint.wasPressed()) {
+            if (WayfindrKeybinds.QUICK_ADD_WAYPOINT.wasPressed()) {
                 val player = mcClient.player
                 if (player != null) {
                     val waypointName = "Quick Waypoint ${WaypointManager.waypoints.size + 1}"
