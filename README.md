@@ -39,16 +39,16 @@
 * Optional automatic death waypoints to help recover lost items
 
 ## Requirements
-* Minecraft 1.21.4
+* Minecraft 1.21.4 or 1.21.5
 * Fabric Loader 0.16.10+
-* Fabric API 0.119.2+
-* Fabric Language Kotlin 1.13.1+ (required for Kotlin mods)
+* Fabric API 0.119.2+ (use the build matching your Minecraft version)
+* Fabric Language Kotlin 1.13.1+ (use the build matching your Minecraft version)
 
 ## Installation
-1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft 1.21.4
+1. Install [Fabric Loader](https://fabricmc.net/use/) for your Minecraft version (1.21.4 or 1.21.5)
 2. Download and place the following mods in your `mods` folder:
-   - [Fabric API](https://modrinth.com/mod/fabric-api)
-   - [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin/versions?g=1.21.4)
+   - [Fabric API](https://modrinth.com/mod/fabric-api) (choose the version for your Minecraft version)
+   - [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin/versions) (choose the version for your Minecraft version)
    - Wayfindr (this mod)
 3. Launch Minecraft with the Fabric profile
 
@@ -202,6 +202,48 @@ gradlew.bat build
 
 3. The compiled mod JAR file will be located in `build/libs/` directory
 4. Copy the JAR file (not the ones with `-sources` or `-dev` in the name) to your Minecraft's `mods` folder
+
+### Building for Minecraft 1.21.5
+
+Keep 1.21.4 as your default in `gradle.properties`. To build a 1.21.5 jar without changing defaults, pass -P overrides and a versioned archive name:
+
+```bash
+./gradlew build \
+  -Pminecraft_version=1.21.5 \
+  -Pyarn_mappings=1.21.5+build.1 \
+  -Pfabric_version=0.119.2+1.21.5 \
+  -Parchives_base_name=wayfindr-mc1.21.5
+```
+
+On Windows:
+
+```bash
+gradlew.bat build ^
+  -Pminecraft_version=1.21.5 ^
+  -Pyarn_mappings=1.21.5+build.1 ^
+  -Pfabric_version=0.119.2+1.21.5 ^
+  -Parchives_base_name=wayfindr-mc1.21.5
+```
+
+### Running locally for Minecraft 1.21.5
+
+To run the dev client for 1.21.5 with overrides:
+
+```bash
+./gradlew runclient \
+  -Pminecraft_version=1.21.5 \
+  -Pyarn_mappings=1.21.5+build.1 \
+  -Pfabric_version=0.119.2+1.21.5
+```
+
+On Windows:
+
+```bash
+gradlew.bat runclient ^
+  -Pminecraft_version=1.21.5 ^
+  -Pyarn_mappings=1.21.5+build.1 ^
+  -Pfabric_version=0.119.2+1.21.5
+```
 
 ## Planned Features
 

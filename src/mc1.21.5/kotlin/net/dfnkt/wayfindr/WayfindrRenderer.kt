@@ -1,14 +1,12 @@
 package net.dfnkt.wayfindr
 
-import com.mojang.blaze3d.systems.RenderSystem
-import net.minecraft.client.gl.ShaderProgramKeys
-import net.minecraft.client.render.BufferRenderer
+import com.mojang.blaze3d.vertex.VertexFormat
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.render.RenderLayer
 import net.minecraft.client.render.Tessellator
-import net.minecraft.client.render.VertexFormat
 import net.minecraft.client.render.VertexFormats
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.util.math.Vec3d
-import net.minecraft.client.MinecraftClient
 
 class WayfindrRenderer {
     companion object {
@@ -37,12 +35,6 @@ class WayfindrRenderer {
             val beamWidth = 0.2f  
             val beamHeight = 50f 
             val baseSize = 0.5f
-
-            RenderSystem.enableBlend()
-            RenderSystem.defaultBlendFunc()
-            RenderSystem.disableCull()
-
-            RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR)
 
             val tessellator = Tessellator.getInstance()
             val bufferBuilder = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR)
@@ -91,11 +83,9 @@ class WayfindrRenderer {
             bufferBuilder.vertex(matrix, size, 0.0f, size).color(red, green, blue, alpha)
 
             val builtBuffer = bufferBuilder.end()
-            BufferRenderer.drawWithGlobalProgram(builtBuffer)
+            RenderLayer.getDebugQuads().draw(builtBuffer)
 
             matrices.pop()
-            RenderSystem.enableCull()
-            RenderSystem.disableBlend()
 
             if (waypointName.isNotEmpty()) {
                 renderWaypointName(matrices, waypointPos, playerPos, waypointName, color, distance)
@@ -172,5 +162,4 @@ class WayfindrRenderer {
             matrices.pop()
         }
     }
-
 }

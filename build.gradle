@@ -9,7 +9,7 @@ version = project.mod_version
 group = project.maven_group
 
 base {
-	archivesName = project.archives_base_name
+	archivesName = "${project.archives_base_name}-${project.minecraft_version}"
 }
 
 repositories {
@@ -64,6 +64,27 @@ java {
 
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
+}
+
+// Versioned source sets: include sources from src/mc${minecraft_version}/ if present
+def mcVersion = project.findProperty('minecraft_version') ?: project.property('minecraft_version')
+def mcSrcDir = "src/mc${mcVersion}"
+
+sourceSets {
+    main {
+        // Kotlin sources
+        if (file("${mcSrcDir}/kotlin").exists()) {
+            kotlin.srcDirs += ["${mcSrcDir}/kotlin"]
+        }
+        // Java sources
+        if (file("${mcSrcDir}/java").exists()) {
+            java.srcDirs += ["${mcSrcDir}/java"]
+        }
+        // Resources
+        if (file("${mcSrcDir}/resources").exists()) {
+            resources.srcDirs += ["${mcSrcDir}/resources"]
+        }
+    }
 }
 
 jar {

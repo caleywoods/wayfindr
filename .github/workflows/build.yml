@@ -9,6 +9,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mc: '1.21.4'
+            yarn: '1.21.4+build.8'
+            fapi: '0.119.2+1.21.4'
+          - mc: '1.21.5'
+            yarn: '1.21.5+build.1'
+            fapi: '0.119.2+1.21.5'
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
@@ -22,9 +32,9 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       - name: build
-        run: ./gradlew build
+        run: ./gradlew build -Pminecraft_version=${{ matrix.mc }} -Pyarn_mappings=${{ matrix.yarn }} -Pfabric_version=${{ matrix.fapi }} -Parchives_base_name=wayfindr-mc${{ matrix.mc }}
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Artifacts
+          name: Artifacts-mc${{ matrix.mc }}
           path: build/libs/
