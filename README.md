@@ -249,6 +249,8 @@ gradlew.bat runclient ^
 
 * ~~The ability to mark a waypoint as your current destination and have an on-screen arrow pointing towards it~~ ✓ Added!
 * ~~Using Fabric global world data to optionally store/sync waypoints to multiple clients~~ ✓ Added!
+* Support NeoForge
+* Support all 1.21.x versions of Minecraft
 * Treat a selected group of waypoints as a graph of connected nodes and determine the fastest route to visit each waypoint (traveling salesman problem)
 * Waypoint categories and filtering options
 * Custom waypoint icons and shapes
