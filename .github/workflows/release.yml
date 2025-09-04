@@ -35,7 +35,7 @@ jobs:
         run: chmod +x ./gradlew
       
       - name: Build
-        run: ./gradlew build -Pminecraft_version=${{ matrix.mc }} -Pyarn_mappings=${{ matrix.yarn }} -Pfabric_version=${{ matrix.fapi }} -Parchives_base_name=wayfindr-mc${{ matrix.mc }}
+        run: ./gradlew build -Pminecraft_version=${{ matrix.mc }} -Pyarn_mappings=${{ matrix.yarn }} -Pfabric_version=${{ matrix.fapi }}
       
       - name: Upload artifacts (mc ${{ matrix.mc }})
         uses: actions/upload-artifact@v4
