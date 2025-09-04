@@ -29,7 +29,6 @@
 * Teleport to waypoints in creative mode
 * Manage waypoints through an in-game GUI
 * Per world persistent waypoints that save between game sessions
-* Optional death waypoint
 * Configurable waypoint render distance and placement distance
 * Customizable keybindings
 * Navigation guidance with on-screen arrow pointing to selected waypoints
