@@ -1,4 +1,3 @@
-<!-- LOGO -->
 <h1>
 <p align="center">
   <img src="https://github.com/caleywoods/wayfindr/blob/main/wayfindr_logo.png?raw=true" alt="Logo" width="350">
@@ -30,6 +29,7 @@
 * Teleport to waypoints in creative mode
 * Manage waypoints through an in-game GUI
 * Per world persistent waypoints that save between game sessions
+* Optional death waypoint
 * Configurable waypoint render distance and placement distance
 * Customizable keybindings
 * Navigation guidance with on-screen arrow pointing to selected waypoints
