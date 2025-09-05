@@ -75,6 +75,11 @@ sourceSets {
         // Kotlin sources
         if (file("${mcSrcDir}/kotlin").exists()) {
             kotlin.srcDirs += ["${mcSrcDir}/kotlin"]
+            
+            // Exclude version-specific files from main source set when building for a specific version
+            // This prevents duplicate class declarations
+            kotlin.exclude "**/WayfindrModClient.kt"
+            kotlin.exclude "**/WayfindrNavigationRenderer.kt"
         }
         // Java sources
         if (file("${mcSrcDir}/java").exists()) {
@@ -93,6 +98,14 @@ jar {
 	from("LICENSE") {
 		rename { "${it}_${inputs.properties.archivesName}"}
 	}
+	
+	// Handle duplicate files
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Configure the sources jar task to handle duplicates
+sourcesJar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // configure the maven publication
