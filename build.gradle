@@ -1,15 +1,47 @@
 plugins {
-	id 'fabric-loom' version '1.10-SNAPSHOT'
+	id 'fabric-loom' version '1.11-SNAPSHOT'
 	id 'maven-publish'
 	id "org.jetbrains.kotlin.jvm" version "2.1.10"
 	id 'org.jetbrains.kotlin.plugin.serialization' version '2.1.10'
+}
+
+// Set loom version if specified in properties
+if (project.hasProperty('loom_version')) {
+    project.plugins.withId('fabric-loom') {
+        project.extensions.configure('loom') {
+            // Configure loom with the specified version
+            println "Using Loom version: ${project.getProperty('loom_version')}"
+        }
+    }
+}
+
+// Load version-specific properties if specified
+if (project.hasProperty('mc_version')) {
+    def versionPropsFile = file("gradle/mc-versions/${project.getProperty('mc_version')}.properties")
+    if (versionPropsFile.exists()) {
+        def versionProps = new Properties()
+        versionPropsFile.withInputStream { stream -> versionProps.load(stream) }
+        
+        // Apply version-specific properties
+        versionProps.each { key, value ->
+            if (!project.hasProperty(key) || project.getProperty(key) == null) {
+                project.ext.set(key, value)
+            }
+        }
+        
+        println "Loaded version-specific properties for Minecraft ${project.getProperty('mc_version')}"
+    } else {
+        println "Warning: No version-specific properties found for ${project.getProperty('mc_version')}"
+    }
 }
 
 version = project.mod_version
 group = project.maven_group
 
 base {
-	archivesName = "Wayfindr-${project.mod_version}-${project.minecraft_version}"
+	archivesName = project.hasProperty('archives_base_name') ? 
+	    project.getProperty('archives_base_name') : 
+	    "Wayfindr-${project.mod_version}-${project.minecraft_version}"
 }
 
 repositories {
