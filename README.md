@@ -161,7 +161,7 @@ This will launch Minecraft with the mod installed in a development environment.
 
 ### Version Management
 
-To update the mod version using semantic versioning:
+To update the mod version:
 
 1. Open a terminal in the project directory
 2. Run one of the following commands:
@@ -181,6 +181,39 @@ To update the mod version using semantic versioning:
 ```
 
 On Windows, use `gradlew.bat` instead of `./gradlew`.
+
+### Building with Stonecutter
+
+To build the mod for different Minecraft versions using Stonecutter:
+
+1. Switch to a specific Minecraft version:
+```bash
+./gradlew stonecutterSwitch --version=1.21.6
+```
+
+2. Build for the current version:
+```bash
+./gradlew build
+```
+
+3. Build for all configured versions:
+```bash
+./gradlew stonecutterBuildAll
+```
+
+### Version-Specific Code
+
+Wayfindr uses Stonecutter's string swap feature to handle version-specific code in a single codebase:
+
+```kotlin
+//? if <=1.21.4 {
+// Code that only runs in Minecraft 1.21.4 or earlier
+//?} else {
+// Code that runs in Minecraft 1.21.5 or later
+//?}
+```
+
+This approach allows us to maintain a single source file while accommodating differences between Minecraft versions.
 
 ### Building the mod
 
