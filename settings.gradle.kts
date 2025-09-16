@@ -20,6 +20,6 @@ stonecutter {
             .forEach { vers("$version-$it", version).buildscript = "build.$it.gradle.kts" }
 
         match("1.21.4", "fabric")
-        // match("1.21.5", "fabric")
+        match("1.21.5", "fabric")
     }
 }

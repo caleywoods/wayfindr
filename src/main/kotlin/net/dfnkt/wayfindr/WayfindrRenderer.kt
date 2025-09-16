@@ -1,6 +1,6 @@
 package net.dfnkt.wayfindr
 
-/*? if minecraft: <=1.21.4 {*/
+/*? if <=1.21.4 {*/
 import com.mojang.blaze3d.systems.RenderSystem
 import net.minecraft.client.gl.ShaderProgramKeys
 import net.minecraft.client.render.BufferRenderer
@@ -99,7 +99,7 @@ class WayfindrRenderer {
             bufferBuilder.vertex(matrix, size, 0.0f, size).color(red, green, blue, alpha)
 
             val builtBuffer = bufferBuilder.end()
-            /*? if minecraft: <=1.21.4 {*/
+            /*? if <=1.21.4 {*/
             BufferRenderer.drawWithGlobalProgram(builtBuffer)
             /*?} else*//*
             RenderLayer.getDebugQuads().draw(builtBuffer)
