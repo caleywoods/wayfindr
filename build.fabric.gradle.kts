@@ -26,6 +26,9 @@ version = "${property("mod.version")}+${property("deps.minecraft")}-fabric"
 base.archivesName = property("mod.id") as String
 
 loom {
+    runs.named("client") {
+        programArgs("--username=dfnkt")
+    }
 }
 
 repositories {
