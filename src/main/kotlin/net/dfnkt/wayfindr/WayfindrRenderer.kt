@@ -15,6 +15,11 @@ import net.minecraft.client.render.VertexFormats
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.util.math.Vec3d
 
+/*? if =1.21.6 {*/
+import net.minecraft.text.Text
+import net.minecraft.util.Formatting
+/*?} */
+
 class WayfindrRenderer {
     companion object {
         fun renderWaypointMarker(
@@ -164,7 +169,6 @@ class WayfindrRenderer {
 
             val textWidth = textRenderer.getWidth(waypointName)
             val matrix4f = matrices.peek().positionMatrix
-
             val bgColor = 0x80000000.toInt()
 
             textRenderer.draw(
