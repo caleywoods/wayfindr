@@ -2,7 +2,8 @@ package net.dfnkt.wayfindr
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.server.MinecraftServer
-import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.server.permissions.Permissions
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -84,7 +85,7 @@ object WayfindrNetworkServer {
                     if (existingWaypoint != null) {
                         logger.info("Found existing waypoint: ${existingWaypoint.name} (Owner: ${existingWaypoint.owner})")
                         
-                        if (existingWaypoint.owner == context.player().uuid || context.player().hasPermissionLevel(2)) {
+                        if (existingWaypoint.owner == context.player().uuid || context.player().permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                             // Update the waypoint
                             if (ServerWaypointManager.updateWaypoint(waypoint)) {
                                 // Broadcast to all players
@@ -119,7 +120,7 @@ object WayfindrNetworkServer {
                     if (waypoint != null) {
                         logger.info("Found waypoint to delete: ${waypoint.name} (Owner: ${waypoint.owner})")
                         
-                        if (waypoint.owner == context.player().uuid || context.player().hasPermissionLevel(2)) {
+                        if (waypoint.owner == context.player().uuid || context.player().permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                             // Remove the waypoint
                             if (ServerWaypointManager.removeWaypoint(waypointId)) {
                                 // Broadcast to all players
@@ -151,7 +152,7 @@ object WayfindrNetworkServer {
      * 
      * @param player The player to send waypoints to
      */
-    fun sendWaypointSync(player: ServerPlayerEntity) {
+    fun sendWaypointSync(player: ServerPlayer) {
         val waypoints = ServerWaypointManager.getAllWaypoints()
         logger.info("Preparing to send waypoint sync to ${player.name.string} with ${waypoints.size} waypoints")
         
@@ -176,7 +177,7 @@ object WayfindrNetworkServer {
         val payload = WayfindrNetworking.WaypointAddPayload(jsonData)
         
         var playerCount = 0
-        for (player in server.playerManager.playerList) {
+        for (player in server.playerList.players) {
             ServerPlayNetworking.send(player, payload)
             playerCount++
         }
@@ -196,7 +197,7 @@ object WayfindrNetworkServer {
         val payload = WayfindrNetworking.WaypointUpdatePayload(jsonData)
         
         var playerCount = 0
-        for (player in server.playerManager.playerList) {
+        for (player in server.playerList.players) {
             ServerPlayNetworking.send(player, payload)
             playerCount++
         }
@@ -215,7 +216,7 @@ object WayfindrNetworkServer {
         val payload = WayfindrNetworking.WaypointDeletePayload(waypointId.toString())
         
         var playerCount = 0
-        for (player in server.playerManager.playerList) {
+        for (player in server.playerList.players) {
             ServerPlayNetworking.send(player, payload)
             playerCount++
         }

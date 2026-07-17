@@ -3,14 +3,14 @@ package net.dfnkt.wayfindr
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
-import net.minecraft.server.command.CommandManager
-import net.minecraft.server.command.ServerCommandSource
-import net.minecraft.text.Text
-import net.minecraft.util.math.Vec3d
+import net.minecraft.commands.Commands
+import net.minecraft.commands.CommandSourceStack
+import net.minecraft.network.chat.Component
+import net.minecraft.world.phys.Vec3
 
 /**
  * Handles registration and execution of Wayfindr mod commands.
- * 
+ *
  * This class provides in-game commands for waypoint management, including:
  * - Adding waypoints at crosshair target location
  * - Adding waypoints at player's current position
@@ -19,7 +19,7 @@ import net.minecraft.util.math.Vec3d
 object WayfindrCommands {
     /**
      * Registers all Wayfindr commands with the Minecraft command system.
-     * 
+     *
      * Command structure:
      * - /waypoint add <n> [color] - Add waypoint at crosshair target
      * - /waypoint addhere <n> [color] - Add waypoint at player position
@@ -28,16 +28,16 @@ object WayfindrCommands {
     fun register() {
         CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
             dispatcher.register(
-                CommandManager.literal("waypoint")
+                Commands.literal("waypoint")
                     .then(
-                        CommandManager.literal("add")
+                        Commands.literal("add")
                             .then(
-                                CommandManager.argument("name", StringArgumentType.string())
+                                Commands.argument("name", StringArgumentType.string())
                                     .executes { context ->
                                         handleAddWaypoint(context, null, false)
                                     }
                                     .then(
-                                        CommandManager.argument("color", StringArgumentType.word())
+                                        Commands.argument("color", StringArgumentType.word())
                                             .executes { context ->
                                                 val colorArg = StringArgumentType.getString(context, "color")
                                                 val color = parseColor(colorArg)
@@ -47,14 +47,14 @@ object WayfindrCommands {
                             )
                     )
                     .then(
-                        CommandManager.literal("addhere")
+                        Commands.literal("addhere")
                             .then(
-                                CommandManager.argument("name", StringArgumentType.string())
+                                Commands.argument("name", StringArgumentType.string())
                                     .executes { context ->
                                         handleAddWaypoint(context, null, true)
                                     }
                                     .then(
-                                        CommandManager.argument("color", StringArgumentType.word())
+                                        Commands.argument("color", StringArgumentType.word())
                                             .executes { context ->
                                                 val colorArg = StringArgumentType.getString(context, "color")
                                                 val color = parseColor(colorArg)
@@ -64,23 +64,23 @@ object WayfindrCommands {
                             )
                     )
                     .then(
-                        CommandManager.literal("delete")
+                        Commands.literal("delete")
                             .then(
-                                CommandManager.argument("name", StringArgumentType.string())
+                                Commands.argument("name", StringArgumentType.string())
                                     .executes { context ->
                                         val name = StringArgumentType.getString(context, "name")
-                                        
+
                                         // Find waypoint by name first, then remove by UUID
                                         val waypoint = WaypointManager.getWaypointByName(name)
                                         if (waypoint != null) {
                                             WaypointManager.removeWaypoint(waypoint.id)
-                                            context.source.sendFeedback(
-                                                { Text.literal("Removed waypoint '$name'") },
+                                            context.source.sendSuccess(
+                                                { Component.literal("Removed waypoint '$name'") },
                                                 false
                                             )
                                         } else {
-                                            context.source.sendFeedback(
-                                                { Text.literal("No waypoint found with name '$name'") },
+                                            context.source.sendSuccess(
+                                                { Component.literal("No waypoint found with name '$name'") },
                                                 false
                                             )
                                         }
@@ -94,22 +94,22 @@ object WayfindrCommands {
 
     /**
      * Handles the logic for adding a waypoint via command.
-     * 
+     *
      * @param context The command context containing source and arguments
      * @param colorInt The color for the waypoint, or null to use default
      * @param usePlayerPosition If true, use player's position; otherwise use crosshair target
      * @return Command success value (1 for success, 0 for failure)
      */
-    private fun handleAddWaypoint(context: CommandContext<ServerCommandSource>, colorInt: Int?, usePlayerPosition: Boolean): Int {
+    private fun handleAddWaypoint(context: CommandContext<CommandSourceStack>, colorInt: Int?, usePlayerPosition: Boolean): Int {
         val player = context.source.player
             ?: return 0 // Exit early if no player
 
         val name = StringArgumentType.getString(context, "name")
-        
+
         // Determine position based on placement mode
         val position = if (usePlayerPosition) {
             // Place at player's exact position
-            Vec3d(player.x, player.y, player.z)
+            Vec3(player.x, player.y, player.z)
         } else {
             // Place at crosshair target location
             WayfindrRaycast.getRaycastPosition(player)
@@ -123,8 +123,8 @@ object WayfindrCommands {
 
         // Feedback to player with placement mode info
         val placementMode = if (usePlayerPosition) "at your location" else "at crosshair target"
-        context.source.sendFeedback({
-            Text.literal("Added waypoint '$name' $placementMode at ${position.x.toInt()}, ${position.y.toInt()}, ${position.z.toInt()}")
+        context.source.sendSuccess({
+            Component.literal("Added waypoint '$name' $placementMode at ${position.x.toInt()}, ${position.y.toInt()}, ${position.z.toInt()}")
         }, false)
 
         return 1
@@ -132,11 +132,11 @@ object WayfindrCommands {
 
     /**
      * Parses a color string into an RGB integer value.
-     * 
+     *
      * Supports:
      * - Named colors (red, green, blue, etc.)
      * - Hex colors (#RRGGBB)
-     * 
+     *
      * @param colorArg The color string to parse
      * @return The RGB integer value of the color
      */

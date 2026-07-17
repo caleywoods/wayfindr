@@ -1,13 +1,13 @@
 plugins {
-	id 'fabric-loom' version '1.11-SNAPSHOT'
+	id 'net.fabricmc.fabric-loom' version '1.17.16'
 	id 'maven-publish'
-	id "org.jetbrains.kotlin.jvm" version "2.1.10"
-	id 'org.jetbrains.kotlin.plugin.serialization' version '2.1.10'
+	id "org.jetbrains.kotlin.jvm" version "2.4.10"
+	id 'org.jetbrains.kotlin.plugin.serialization' version '2.4.10'
 }
 
 // Set loom version if specified in properties
 if (project.hasProperty('loom_version')) {
-    project.plugins.withId('fabric-loom') {
+    project.plugins.withId('net.fabricmc.fabric-loom') {
         project.extensions.configure('loom') {
             // Configure loom with the specified version
             println "Using Loom version: ${project.getProperty('loom_version')}"
@@ -60,14 +60,14 @@ fabricApi {
 
 dependencies {
 	// To change the versions see the gradle.properties file
-	minecraft "net.minecraft:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	// MC 26.x is unobfuscated: use com.mojang:minecraft, no mappings, plain implementation (no modImplementation)
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	modImplementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
-	implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	implementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
+	implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
 }
 
 processResources {
@@ -79,12 +79,12 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+	it.options.release = 25
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-	kotlinOptions {
-		jvmTarget = 21
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+	compilerOptions {
+		jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25
 	}
 }
 
@@ -94,8 +94,8 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
 }
 
 // Versioned source sets: include sources from src/mc${minecraft_version}/ if present

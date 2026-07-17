@@ -2,7 +2,7 @@ package net.dfnkt.wayfindr
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import net.minecraft.util.math.Vec3d
+import net.minecraft.world.phys.Vec3
 import org.slf4j.LoggerFactory
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 import java.util.UUID
@@ -115,7 +115,7 @@ object WaypointManager {
      * @param visible Whether the waypoint should be visible (default: true)
      * @return The newly created waypoint
      */
-    fun addWaypoint(name: String, position: Vec3d, color: Int = 0xFF0000, dimension: String = "minecraft:overworld", visible: Boolean = true): Waypoint {
+    fun addWaypoint(name: String, position: Vec3, color: Int = 0xFF0000, dimension: String = "minecraft:overworld", visible: Boolean = true): Waypoint {
         val waypoint = Waypoint(name, SerializableVec3d(position.x, position.y, position.z), color, dimension, visible)
         return addWaypoint(waypoint)
     }
@@ -267,7 +267,7 @@ object WaypointManager {
      * @param playerPos The current position of the player
      * @return True if the player is within the deadzone, false otherwise or if no navigation target is set
      */
-    fun isWithinDeadzone(playerPos: Vec3d): Boolean {
+    fun isWithinDeadzone(playerPos: Vec3): Boolean {
         val target = getNavigationTarget() ?: return false
         val waypointPos = target.getPosition()
         
@@ -373,7 +373,7 @@ object WaypointManager {
          *
          * @return A Vec3d representation of this waypoint's position
          */
-        fun getPosition(): Vec3d {
+        fun getPosition(): Vec3 {
             return position.toVec3d()
         }
     }
@@ -392,8 +392,8 @@ object WaypointManager {
          * 
          * @return A Vec3d representation of this position
          */
-        fun toVec3d(): Vec3d {
-            return Vec3d(x, y, z)
+        fun toVec3d(): Vec3 {
+            return Vec3(x, y, z)
         }
     }
 }

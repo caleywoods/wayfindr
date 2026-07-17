@@ -2,7 +2,7 @@ package net.dfnkt.wayfindr
 
 import kotlinx.serialization.json.Json
 import net.minecraft.server.MinecraftServer
-import net.minecraft.util.WorldSavePath
+import net.minecraft.world.level.storage.LevelResource
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
@@ -97,7 +97,7 @@ object ServerWaypointSaveHandler {
      */
     private fun getSaveFile(server: MinecraftServer): File {
         // Store in the server's world directory
-        val worldDirectory = server.getSavePath(WorldSavePath.ROOT).toFile()
+        val worldDirectory = server.getWorldPath(LevelResource.ROOT).toFile()
         return File(worldDirectory, SHARED_WAYPOINTS_FILE)
     }
 }

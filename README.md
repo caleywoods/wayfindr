@@ -244,6 +244,67 @@ gradlew.bat runclient ^
   -Pfabric_version=0.119.2+1.21.5
 ```
 
+## Minecraft 26.2
+
+Minecraft 26.2 is a major toolchain break from the 1.21.x line: Mojang now ships
+**deobfuscated** jars (no Yarn/obfuscation mappings) and the game requires **Java 25**.
+On the `mc26.2` branch these settings are already the defaults in `gradle.properties`,
+so no `-P` overrides are needed — but you must build and run with a JDK 25.
+
+### Prerequisites
+
+* **JDK 25** (Temurin 25 or equivalent). Minecraft 26.2 will not run on Java 21.
+* Gradle wrapper (bundled) — pulls Gradle 9.6.1 automatically.
+
+Install Temurin 25 on macOS:
+
+```bash
+brew install --cask temurin@25
+```
+
+Point Gradle at JDK 25 for the commands below. The simplest way is to prefix each
+command with `JAVA_HOME`:
+
+```bash
+JAVA_HOME="/path/to/jdk-25" ./gradlew <task>
+```
+
+(Find your JDK 25 path on macOS with `/usr/libexec/java_home -v 25`.)
+
+### Building for 26.2
+
+```bash
+JAVA_HOME="$(/usr/libexec/java_home -v 25)" ./gradlew build
+```
+
+The compiled jar is `build/libs/wayfindr-<version>.jar` (ignore the `-sources` jar).
+Copy it into your Minecraft `mods` folder alongside:
+
+* [Fabric API](https://modrinth.com/mod/fabric-api) for 26.2 (`0.155.2+26.2` or newer)
+* [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) (`1.13.13+kotlin.2.4.10` or newer)
+
+### Running the dev client for 26.2
+
+```bash
+JAVA_HOME="$(/usr/libexec/java_home -v 25)" ./gradlew runClient
+```
+
+This launches Minecraft 26.2 with the mod loaded in a development environment.
+
+### 26.2 toolchain summary
+
+| Component | 1.21.x | 26.2 |
+|-----------|--------|------|
+| Java | 21 | **25** |
+| Loom plugin | `fabric-loom` | `net.fabricmc.fabric-loom` |
+| Mappings | Yarn | none (deobfuscated jars) |
+| Minecraft dep | `net.minecraft:minecraft` | `com.mojang:minecraft` |
+| Mod dependencies | `modImplementation` | `implementation` |
+
+> Note: because 26.2 uses a different mappings/toolchain than the 1.21.x versions,
+> the `mc26.2` branch is kept separate from the `main` (1.21.4/1.21.5) branch rather
+> than sharing a single build.
+
 ## Planned Features
 
 * ~~The ability to mark a waypoint as your current destination and have an on-screen arrow pointing towards it~~ ✓ Added!

@@ -3,7 +3,7 @@ package net.dfnkt.wayfindr
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
-import net.minecraft.client.MinecraftClient
+import net.minecraft.client.Minecraft
 
 /**
  * Handles saving and loading waypoints to/from persistent storage.
@@ -89,15 +89,15 @@ object WayfindrSaveFileHandler {
      * @return The current world name or "default" if it cannot be determined
      */
     fun getCurrentWorldName(): String {
-        val client = MinecraftClient.getInstance()
-        
+        val client = Minecraft.getInstance()
+
         return when {
-            client.server != null -> {
-                client.server?.saveProperties?.levelName ?: "default"
+            client.singleplayerServer != null -> {
+                client.singleplayerServer?.worldData?.levelName ?: "default"
             }
-            client.networkHandler != null -> {
-                val serverInfo = client.currentServerEntry
-                serverInfo?.address ?: "default"
+            client.connection != null -> {
+                val serverInfo = client.currentServer
+                serverInfo?.ip ?: "default"
             }
             else -> "default"
         }
