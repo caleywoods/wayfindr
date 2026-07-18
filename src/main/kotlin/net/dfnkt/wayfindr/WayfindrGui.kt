@@ -68,9 +68,9 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
 
         // Filter buttons
         addRenderableWidget(
-            Button.builder(Component.literal(if (showPersonalWaypoints) "✓ Personal" else "❌ Personal")) { button ->
+            Button.builder(Component.literal(if (showPersonalWaypoints) "[x] Personal" else "[ ] Personal")) { button ->
                 showPersonalWaypoints = !showPersonalWaypoints
-                button.message = Component.literal(if (showPersonalWaypoints) "✓ Personal" else "❌ Personal")
+                button.message = Component.literal(if (showPersonalWaypoints) "[x] Personal" else "[ ] Personal")
                 refreshWaypointList(RIGHT_PANE_Y)
             }
                 .bounds(10, height - FILTER_BUTTON_Y_OFFSET, paneWidth / 2 - 15, BUTTON_HEIGHT)
@@ -78,9 +78,9 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
         )
 
         addRenderableWidget(
-            Button.builder(Component.literal(if (showSharedWaypoints) "✓ Shared" else "❌ Shared")) { button ->
+            Button.builder(Component.literal(if (showSharedWaypoints) "[x] Shared" else "[ ] Shared")) { button ->
                 showSharedWaypoints = !showSharedWaypoints
-                button.message = Component.literal(if (showSharedWaypoints) "✓ Shared" else "❌ Shared")
+                button.message = Component.literal(if (showSharedWaypoints) "[x] Shared" else "[ ] Shared")
                 refreshWaypointList(RIGHT_PANE_Y)
             }
                 .bounds(paneWidth / 2 + 5, height - FILTER_BUTTON_Y_OFFSET, paneWidth / 2 - 15, BUTTON_HEIGHT)
@@ -187,13 +187,13 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                 .build()
 
             // Add a visibility indicator
-            val visibilityIndicator = Button.builder(Component.literal(if (waypoint.visible) "👁" else "🚫")) { button ->
+            val visibilityIndicator = Button.builder(Component.literal(if (waypoint.visible) "1" else "0")) { button ->
                 // Toggle visibility without selecting the waypoint
                 val success = WaypointManager.toggleWaypointVisibility(waypoint.id)
                 if (success) {
                     // Update the button text to reflect the new visibility state
                     val updatedWaypoint = WaypointManager.getWaypoint(waypoint.id)
-                    button.message = Component.literal(if (updatedWaypoint?.visible == true) "👁" else "🚫")
+                    button.message = Component.literal(if (updatedWaypoint?.visible == true) "1" else "0")
 
                     // If this waypoint is currently selected, update its details
                     if (selectedWaypoint?.id == waypoint.id) {
@@ -207,11 +207,11 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
 
             // Add a navigation guidance button
             val isNavigationTarget = WaypointManager.isNavigationTarget(waypoint.id)
-            val navigationButton = Button.builder(Component.literal(if (isNavigationTarget) "🧭" else "📍")) { button ->
+            val navigationButton = Button.builder(Component.literal(if (isNavigationTarget) "*" else ">")) { button ->
                 // Toggle navigation guidance without selecting the waypoint
                 if (isNavigationTarget) {
                     WaypointManager.clearNavigationTarget()
-                    button.message = Component.literal("📍")
+                    button.message = Component.literal(">")
                 } else {
                     WaypointManager.setNavigationTarget(waypoint.id)
                     // Update all navigation buttons to ensure only one is active
@@ -251,7 +251,7 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
      * based on whether it's shared or personal
      */
     private fun buildWaypointButtonText(waypoint: WaypointManager.Waypoint): Component {
-        val prefix = if (waypoint.isShared) "🌐 " else "🔒 "
+        val prefix = if (waypoint.isShared) "[Shared] " else "[Personal] "
         return Component.literal(prefix + waypoint.name)
     }
 
@@ -290,7 +290,7 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
 
         // Navigation guidance toggle
         val isNavigationTarget = WaypointManager.isNavigationTarget(waypoint.id)
-        val navigationText = if (isNavigationTarget) "Stop Navigation 🧭" else "Navigate to Waypoint 📍"
+        val navigationText = if (isNavigationTarget) "Stop Navigation" else "Navigate to Waypoint"
         val navigationButton = Button.builder(Component.literal(navigationText)) {
             if (isNavigationTarget) {
                 WaypointManager.clearNavigationTarget()
@@ -307,7 +307,7 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
 
         // Shared status toggle (only if player owns the waypoint or it's personal)
         if (!waypoint.isShared || waypoint.owner == Minecraft.getInstance().player?.uuid) {
-            val shareText = if (waypoint.isShared) "Make Personal 🔒" else "Share Waypoint 🌐"
+            val shareText = if (waypoint.isShared) "Make Personal" else "Share Waypoint"
             val shareButton = Button.builder(Component.literal(shareText)) {
                 // Toggle shared status
                 waypoint.isShared = !waypoint.isShared
@@ -433,7 +433,7 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
         // Draw selected waypoint details
         selectedWaypoint?.let { waypoint ->
             // Draw waypoint name with shared/personal indicator
-            val namePrefix = if (waypoint.isShared) "🌐 " else "🔒 "
+            val namePrefix = if (waypoint.isShared) "[Shared] " else "[Personal] "
             context.text(
                 font,
                 Component.literal(namePrefix + waypoint.name),
