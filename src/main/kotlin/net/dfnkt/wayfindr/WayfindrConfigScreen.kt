@@ -11,9 +11,11 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
     private var maxRenderDistanceSlider: AbstractSliderButton? = null
     private var maxRaycastDistanceSlider: AbstractSliderButton? = null
     private var deathWaypointButton: Button? = null
+    private var enableTeleportButton: Button? = null
 
     private var config = WayfindrConfig.get()
     private var createDeathWaypoint = config.createDeathWaypoint
+    private var enableTeleport = config.enableTeleport
 
     override fun init() {
         maxRenderDistanceSlider = this.addRenderableWidget(
@@ -61,17 +63,26 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
             }.bounds(width / 2 - 100, height / 4 + 120, 200, 20).build()
         )
 
+        enableTeleportButton = this.addRenderableWidget(
+            Button.builder(
+                Component.literal("Teleport Button (ops): ${if (enableTeleport) "Enabled" else "Disabled"}")
+            ) { button ->
+                enableTeleport = !enableTeleport
+                button.message = Component.literal("Teleport Button (ops): ${if (enableTeleport) "Enabled" else "Disabled"}")
+            }.bounds(width / 2 - 100, height / 4 + 150, 200, 20).build()
+        )
+
         this.addRenderableWidget(
             Button.builder(Component.literal("Save")) {
                 saveConfig()
                 onClose()
-            }.bounds(width / 2 - 100, height / 4 + 150, 95, 20).build()
+            }.bounds(width / 2 - 100, height / 4 + 180, 95, 20).build()
         )
 
         this.addRenderableWidget(
             Button.builder(Component.literal("Cancel")) {
                 onClose()
-            }.bounds(width / 2 + 5, height / 4 + 150, 95, 20).build()
+            }.bounds(width / 2 + 5, height / 4 + 180, 95, 20).build()
         )
     }
 
@@ -95,7 +106,8 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
             maxRaycastDistance = raycastSliderValue,
             openMenuKey = config.openMenuKey,
             quickAddKey = config.quickAddKey,
-            createDeathWaypoint = createDeathWaypoint
+            createDeathWaypoint = createDeathWaypoint,
+            enableTeleport = enableTeleport
         )
 
         WayfindrConfig.update(newConfig)

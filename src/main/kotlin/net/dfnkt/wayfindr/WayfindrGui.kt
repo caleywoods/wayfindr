@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.client.Minecraft
+import net.minecraft.server.permissions.Permissions
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -357,11 +358,13 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
             addRenderableWidget(shareButton)
         }
 
-        // Teleport button (if in creative mode)
+        // Teleport button (ops only — /tp requires permission level 2; also covers
+        // singleplayer-with-cheats, which grants level 4). Gated behind a config toggle.
         val client = Minecraft.getInstance()
         val yOffset = if (!waypoint.isShared || waypoint.owner == client.player?.uuid) 160 else 130
 
-        if (client.player?.abilities?.instabuild == true) {
+        if (WayfindrConfig.get().enableTeleport &&
+            client.player?.permissions()?.hasPermission(Permissions.COMMANDS_GAMEMASTER) == true) {
             val teleportButton = Button.builder(Component.literal("Teleport")) {
                 val pos = waypoint.getPosition()
                 val command = "tp ${pos.x.toInt()} ${pos.y.toInt()} ${pos.z.toInt()}"

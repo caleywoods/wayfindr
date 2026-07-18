@@ -12,7 +12,8 @@ data class WayfindrConfig(
     val maxRaycastDistance: Double = 200.0,
     val openMenuKey: Int = GLFW.GLFW_KEY_M,
     val quickAddKey: Int = GLFW.GLFW_KEY_N,
-    val createDeathWaypoint: Boolean = false
+    val createDeathWaypoint: Boolean = false,
+    val enableTeleport: Boolean = true
 ) {
     companion object {
         private val minecraftDir = File(System.getProperty("user.home"), ".minecraft")
