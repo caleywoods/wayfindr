@@ -418,13 +418,13 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
         }
 
         // Draw title centered in the left pane
-        context.centeredText(font, title, paneWidth / 2, 6, 0xFFFFFF)
+        context.centeredText(font, title, paneWidth / 2, 6, 0xFFFFFFFF.toInt())
 
         // Draw waypoint count with breakdown
         val personalCount = WaypointManager.waypoints.count { !it.isShared }
         val sharedCount = WaypointManager.waypoints.count { it.isShared }
         val waypointCountText = "${WaypointManager.waypoints.size} Waypoints ($personalCount Personal, $sharedCount Shared)"
-        context.text(font, waypointCountText, 10, height - 20, 0xAAAAAA, true)
+        context.text(font, waypointCountText, 10, height - 20, 0xFFAAAAAA.toInt(), true)
 
         // Draw selected waypoint details
         selectedWaypoint?.let { waypoint ->
@@ -435,7 +435,7 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                 Component.literal(namePrefix + waypoint.name),
                 rightPaneX + 10,
                 RIGHT_PANE_Y + 10,
-                0xFFFFFF,
+                0xFFFFFFFF.toInt(),
                 true
             )
 
@@ -447,7 +447,7 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                 coordsText,
                 rightPaneX + 10,
                 RIGHT_PANE_Y + 25,
-                0xAAAAAA,
+                0xFFAAAAAA.toInt(),
                 true
             )
 
@@ -460,7 +460,7 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                     ownerText,
                     rightPaneX + 10,
                     RIGHT_PANE_Y + 25 + font.lineHeight + 2,
-                    0xAAAAAA,
+                    0xFFAAAAAA.toInt(),
                     true
                 )
             }

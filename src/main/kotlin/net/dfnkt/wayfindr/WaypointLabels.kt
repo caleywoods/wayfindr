@@ -75,7 +75,7 @@ object WaypointLabels {
 
             // Translucent backdrop for readability.
             context.fill(x - 2, y - 2, x + textWidth + 2, y + font.lineHeight, 0x80000000.toInt())
-            context.text(font, label, x, y, 0xFFFFFF, true)
+            context.text(font, label, x, y, 0xFFFFFFFF.toInt(), true)
         }
     }
 }

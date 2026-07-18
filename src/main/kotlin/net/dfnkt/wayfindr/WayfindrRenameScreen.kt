@@ -63,8 +63,8 @@ class WayfindrRenameScreen(
     override fun extractRenderState(context: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         super.extractRenderState(context, mouseX, mouseY, delta)
 
-        context.centeredText(font, title, width / 2, 20, 0xFFFFFF)
-        context.centeredText(font, Component.literal("Enter new name:"), width / 2, height / 2 - 40, 0xFFFFFF)
+        context.centeredText(font, title, width / 2, 20, 0xFFFFFFFF.toInt())
+        context.centeredText(font, Component.literal("Enter new name:"), width / 2, height / 2 - 40, 0xFFFFFFFF.toInt())
     }
 
     override fun keyPressed(event: KeyEvent): Boolean {
