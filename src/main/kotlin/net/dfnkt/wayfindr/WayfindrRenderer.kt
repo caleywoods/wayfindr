@@ -39,18 +39,18 @@ class WayfindrRenderer {
 
             val beamWidth = 0.2f
             val beamHeight = 50f
-            val baseSize = 0.5f
 
             poseStack.pushPose()
 
-            // Translate from the camera to the waypoint position.
+            // Translate from the camera to the waypoint position. The beam quads are
+            // centered on the origin (x/z in [-size, size]), so this keeps the beam
+            // centered on the waypoint — matching where the HUD name label is projected.
             poseStack.translate(
                 waypointPos.x - cameraPos.x,
                 waypointPos.y - cameraPos.y,
                 waypointPos.z - cameraPos.z
             )
 
-            poseStack.translate(-baseSize / 2.0, 0.0, -baseSize / 2.0)
             poseStack.scale(beamWidth, beamHeight, beamWidth)
 
             collector.submitCustomGeometry(poseStack, RenderTypes.debugQuads()) { pose, vc ->
