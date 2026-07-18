@@ -26,7 +26,7 @@
 ## Features
 * Create colored waypoints at your current position or at your crosshair location
 * Show/Hide waypoints
-* Teleport to waypoints in creative mode
+* Teleport to waypoints (operators / singleplayer with cheats; toggleable in config)
 * Manage waypoints through an in-game GUI
 * Per world persistent waypoints that save between game sessions
 * Configurable waypoint render distance and placement distance
@@ -71,15 +71,16 @@ Note: The Wayfindr Settings screen does not change keybinds; use the Controls me
 * **Max Waypoint Render Distance** - How far away waypoints will be visible (default: 100 blocks)
 * **Max Waypoint Placement Distance** - How far away you can place waypoints with the quick add key (default: 100 blocks)
 * **Death Waypoint** - When enabled, automatically creates a waypoint at your death location (default: Disabled)
+* **Teleport Button** - When enabled, shows a Teleport button in the waypoint details for operators (and singleplayer with cheats). Runs `/tp`, so it only works for players with permission level 2+ (default: Enabled)
 
 ## Navigation Guidance
 The waypoint navigation feature helps guide you to your selected destination:
 
-1. Select a waypoint for navigation by clicking the arrow button (↗️) next to the waypoint in the list
-2. Alternatively, select a waypoint and click the "Guide Me to Waypoint" button in the details panel
+1. Select a waypoint for navigation by clicking the `>` button next to the waypoint in the list (it changes to `*` while active)
+2. Alternatively, select a waypoint and click the "Navigate to Waypoint" button in the details panel
 3. An arrow will appear at the top of your screen pointing toward the selected waypoint
 4. The distance to the waypoint is displayed below the arrow
-5. To stop navigation guidance, click the arrow button again (➡️) or click "Stop Guiding to Waypoint" in the details panel
+5. To stop navigation guidance, click the `*` button again or click "Stop Navigation" in the details panel
 
 ## Server Waypoint Sharing
 Wayfindr supports sharing waypoints with other players on multiplayer servers:
@@ -87,7 +88,7 @@ Wayfindr supports sharing waypoints with other players on multiplayer servers:
 1. Create a waypoint as usual through the GUI or command
 2. Shared waypoints are automatically synchronized with all players on the server
 3. All players on the server will receive the shared waypoint
-4. Shared waypoints are marked with a special icon in the waypoint list
+4. Shared waypoints are marked with a `[Shared]` tag in the waypoint list (personal ones show `[Personal]`)
 5. Only the waypoint creator or server operators can modify or delete shared waypoints
 
 ## Data Storage
