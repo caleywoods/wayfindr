@@ -345,6 +345,10 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                     waypoint.owner = null
                 }
 
+                // Persist the toggled shared/personal state to disk. Without this the
+                // change lives only in memory and can be lost on reload.
+                WaypointManager.updateWaypoint(waypoint)
+
                 refreshWaypointDetails()
                 refreshWaypointList(RIGHT_PANE_Y)
             }

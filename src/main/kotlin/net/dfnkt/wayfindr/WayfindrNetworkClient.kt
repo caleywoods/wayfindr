@@ -107,7 +107,17 @@ object WayfindrNetworkClient {
             context.client().execute {
                 try {
                     logger.info("Received waypoint delete for ID: $waypointId")
-                    
+
+                    // A server delete broadcast is only meant to purge *shared* copies.
+                    // If the local copy is personal (e.g. the owner just converted a
+                    // shared waypoint back to personal), the delete echo must NOT remove
+                    // it, or the waypoint disappears from memory and disk entirely.
+                    val existing = WaypointManager.getWaypoint(waypointId)
+                    if (existing != null && !existing.isShared) {
+                        logger.info("Ignoring server delete for locally personal waypoint: $waypointId")
+                        return@execute
+                    }
+
                     // Use removeWaypoint method instead of directly modifying the list
                     val success = WaypointManager.removeWaypoint(waypointId)
                     
