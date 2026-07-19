@@ -18,12 +18,19 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
     private var enableTeleport = config.enableTeleport
 
     override fun init() {
+        // Responsive layout: controls stack from the top with a fixed row stride, and
+        // Save/Cancel are anchored to the bottom of the screen so they are always
+        // visible/clickable regardless of GUI scale (previously they used height/4 + 180,
+        // which pushed them off the bottom on short screens).
+        val controlX = width / 2 - 100
+        val controlW = 200
+        val rowStride = 24
+        val top = 40
+        var y = top
+
         maxRenderDistanceSlider = this.addRenderableWidget(
             object : AbstractSliderButton(
-                width / 2 - 100,
-                height / 4,
-                200,
-                20,
+                controlX, y, controlW, 20,
                 Component.literal("Max Waypoint Render Distance: ${config.maxRenderDistance.roundToInt()}"),
                 (config.maxRenderDistance - 50.0) / 450.0
             ) {
@@ -35,13 +42,11 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
                 }
             }
         )
+        y += rowStride
 
         maxRaycastDistanceSlider = this.addRenderableWidget(
             object : AbstractSliderButton(
-                width / 2 - 100,
-                height / 4 + 30,
-                200,
-                20,
+                controlX, y, controlW, 20,
                 Component.literal("Max Waypoint Placement Distance: ${config.maxRaycastDistance.roundToInt()}"),
                 (config.maxRaycastDistance - 50.0) / 450.0
             ) {
@@ -53,6 +58,7 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
                 }
             }
         )
+        y += rowStride
 
         deathWaypointButton = this.addRenderableWidget(
             Button.builder(
@@ -60,8 +66,9 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
             ) { button ->
                 createDeathWaypoint = !createDeathWaypoint
                 button.message = Component.literal("Death Waypoint: ${if (createDeathWaypoint) "Enabled" else "Disabled"}")
-            }.bounds(width / 2 - 100, height / 4 + 120, 200, 20).build()
+            }.bounds(controlX, y, controlW, 20).build()
         )
+        y += rowStride
 
         enableTeleportButton = this.addRenderableWidget(
             Button.builder(
@@ -69,20 +76,22 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
             ) { button ->
                 enableTeleport = !enableTeleport
                 button.message = Component.literal("Teleport Button (ops): ${if (enableTeleport) "Enabled" else "Disabled"}")
-            }.bounds(width / 2 - 100, height / 4 + 150, 200, 20).build()
+            }.bounds(controlX, y, controlW, 20).build()
         )
 
+        // Anchor Save/Cancel to the bottom; never let them sit under the last control.
+        val bottomY = maxOf(height - 28, y + rowStride + 6)
         this.addRenderableWidget(
             Button.builder(Component.literal("Save")) {
                 saveConfig()
                 onClose()
-            }.bounds(width / 2 - 100, height / 4 + 180, 95, 20).build()
+            }.bounds(controlX, bottomY, 95, 20).build()
         )
 
         this.addRenderableWidget(
             Button.builder(Component.literal("Cancel")) {
                 onClose()
-            }.bounds(width / 2 + 5, height / 4 + 180, 95, 20).build()
+            }.bounds(width / 2 + 5, bottomY, 95, 20).build()
         )
     }
 
@@ -119,10 +128,10 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
 
     override fun extractRenderState(context: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         super.extractRenderState(context, mouseX, mouseY, delta)
-        context.centeredText(font, title, width / 2, 20, 0xFFFFFFFF.toInt())
+        context.centeredText(font, title, width / 2, 12, 0xFFFFFFFF.toInt())
 
         context.text(font,
             Component.literal("Configure Wayfindr mod settings"),
-            width / 2 - 100, height / 4 - 20, 0xFFAAAAAA.toInt(), false)
+            width / 2 - 100, 26, 0xFFAAAAAA.toInt(), false)
     }
 }

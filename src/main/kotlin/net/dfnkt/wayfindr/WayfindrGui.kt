@@ -107,7 +107,19 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                 .build()
         )
 
-        // Add waypoint button
+        // Default right-pane buttons (Add / Settings / Close). Shown whenever no
+        // waypoint is selected; removed while a waypoint's details are open.
+        addDefaultRightPaneButtons()
+
+        refreshWaypointList(RIGHT_PANE_Y)
+    }
+
+    /**
+     * Adds the right-pane buttons shown when no waypoint is selected: Add Waypoint,
+     * Settings and Close. These are removed by [refreshWaypointDetails] when a waypoint
+     * is selected and re-added when it is deselected.
+     */
+    private fun addDefaultRightPaneButtons() {
         addRenderableWidget(
             Button.builder(Component.literal("+ Add Waypoint")) {
                 val client = Minecraft.getInstance()
@@ -124,7 +136,6 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                 .build()
         )
 
-        // Settings button
         addRenderableWidget(
             Button.builder(Component.literal("Settings")) {
                 minecraft?.setScreenAndShow(WayfindrConfigScreen(this))
@@ -133,14 +144,11 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                 .build()
         )
 
-        // Close button
         addRenderableWidget(
             Button.builder(Component.literal("Close")) { onClose() }
                 .bounds(rightPaneX + paneWidth / 2 + vGap, bottomRowY, paneWidth / 2 - edgeMargin - vGap, BUTTON_HEIGHT)
                 .build()
         )
-
-        refreshWaypointList(RIGHT_PANE_Y)
     }
 
     private fun refreshWaypointList(startY: Int) {
@@ -206,7 +214,14 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
             // Create a container panel for each waypoint entry
             val buttonText = buildWaypointButtonText(waypoint)
             val waypointButton = Button.builder(buttonText) {
-                selectWaypoint(waypoint.id)
+                // Clicking the already-selected waypoint deselects it, returning to the
+                // default right pane (with the Settings button) without reopening.
+                if (selectedWaypoint?.id == waypoint.id) {
+                    selectedWaypoint = null
+                    refreshWaypointDetails()
+                } else {
+                    selectWaypoint(waypoint.id)
+                }
             }
                 .bounds(listEntryX, currentY, entryWidth, BUTTON_HEIGHT)
                 .build()
@@ -278,7 +293,11 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
             }
         }
 
-        val waypoint = selectedWaypoint ?: return
+        // No selection: show the default right-pane buttons (Add / Settings / Close).
+        val waypoint = selectedWaypoint ?: run {
+            addDefaultRightPaneButtons()
+            return
+        }
 
         val client = Minecraft.getInstance()
         val ownsOrPersonal = !waypoint.isShared || waypoint.owner == client.player?.uuid

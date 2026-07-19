@@ -21,7 +21,15 @@ data class WayfindrConfig(
         private val configFile = File(modDir, "config.json")
         private val MOD_ID = "wayfindr"
         private val logger = LoggerFactory.getLogger(MOD_ID)
-        private val json = Json { prettyPrint = true }
+        // encodeDefaults so every field is written to disk, even when equal to its
+        // default. Keeps the saved config explicit and unambiguous (e.g. an off toggle
+        // is persisted as `false` rather than omitted). ignoreUnknownKeys so older/newer
+        // config files still load.
+        private val json = Json {
+            prettyPrint = true
+            encodeDefaults = true
+            ignoreUnknownKeys = true
+        }
         
         private var instance = WayfindrConfig()
         
@@ -56,14 +64,14 @@ data class WayfindrConfig(
                     logger.error("Failed to create directory: ${modDir.absolutePath}")
                     return
                 }
-                
+
                 configFile.writeText(json.encodeToString(instance))
                 logger.info("Saved configuration to ${configFile.absolutePath}")
             } catch (e: Exception) {
-                logger.error("Error saving config: ${e.message}")
+                logger.error("Error saving config to ${configFile.absolutePath}", e)
             }
         }
-        
+
         fun update(newConfig: WayfindrConfig) {
             instance = newConfig
             save()
