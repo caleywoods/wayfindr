@@ -7,7 +7,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.client.Minecraft
-import net.minecraft.server.permissions.Permissions
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -188,41 +187,26 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                 .build()
 
             // Add a visibility indicator
-            val visibilityIndicator = Button.builder(Component.literal(if (waypoint.visible) "1" else "0")) { button ->
-                // Toggle visibility without selecting the waypoint
-                val success = WaypointManager.toggleWaypointVisibility(waypoint.id)
-                if (success) {
-                    // Update the button text to reflect the new visibility state
-                    val updatedWaypoint = WaypointManager.getWaypoint(waypoint.id)
-                    button.message = Component.literal(if (updatedWaypoint?.visible == true) "1" else "0")
-
-                    // If this waypoint is currently selected, update its details
-                    if (selectedWaypoint?.id == waypoint.id) {
-                        selectedWaypoint = updatedWaypoint
-                        refreshWaypointDetails()
-                    }
-                }
+            val visibilityIndicator = Button.builder(Component.literal(if (waypoint.visible) "1" else "0")) {
+                // Toggle visibility, then rebuild the list (and, via re-select, the
+                // details pane) so both stay in sync regardless of where it was toggled.
+                WaypointManager.toggleWaypointVisibility(waypoint.id)
+                refreshWaypointList(RIGHT_PANE_Y)
             }
                 .bounds(paneWidth - 50, currentY, 20, BUTTON_HEIGHT)
                 .build()
 
             // Add a navigation guidance button
             val isNavigationTarget = WaypointManager.isNavigationTarget(waypoint.id)
-            val navigationButton = Button.builder(Component.literal(if (isNavigationTarget) "*" else ">")) { button ->
-                // Toggle navigation guidance without selecting the waypoint
+            val navigationButton = Button.builder(Component.literal(if (isNavigationTarget) "*" else ">")) {
+                // Toggle navigation guidance, then rebuild the list (and details) so the
+                // active indicator stays in sync across both panes.
                 if (isNavigationTarget) {
                     WaypointManager.clearNavigationTarget()
-                    button.message = Component.literal(">")
                 } else {
                     WaypointManager.setNavigationTarget(waypoint.id)
-                    // Update all navigation buttons to ensure only one is active
-                    refreshWaypointList(RIGHT_PANE_Y)
                 }
-
-                // If this waypoint is currently selected, update its details
-                if (selectedWaypoint?.id == waypoint.id) {
-                    refreshWaypointDetails()
-                }
+                refreshWaypointList(RIGHT_PANE_Y)
             }
                 .bounds(paneWidth - 30, currentY, 20, BUTTON_HEIGHT)
                 .build()
@@ -261,6 +245,20 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
         refreshWaypointDetails()
     }
 
+    /**
+     * Whether this client may run the vanilla `/tp` command.
+     *
+     * The server sends each client a permission-filtered command tree, so the
+     * `tp` / `teleport` node is only present when the player actually has permission
+     * (operators, or singleplayer with cheats). This is reliable on both singleplayer
+     * and multiplayer, unlike the client-side permission set, which is not synced for
+     * op status in 26.2 and reports nothing for a real server operator.
+     */
+    private fun canUseTeleportCommand(): Boolean {
+        val root = Minecraft.getInstance().connection?.commands?.root ?: return false
+        return root.getChild("tp") != null || root.getChild("teleport") != null
+    }
+
     private fun refreshWaypointDetails() {
         // Remove previous detail buttons
         for (child in children().toList()) {
@@ -283,7 +281,8 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
         val visibilityText = if (waypoint.visible) "Hide Waypoint" else "Show Waypoint"
         val visibilityButton = Button.builder(Component.literal(visibilityText)) {
             WaypointManager.toggleWaypointVisibility(waypoint.id)
-            refreshWaypointDetails()
+            // Rebuild the list too so its "1"/"0" indicator matches this pane.
+            refreshWaypointList(RIGHT_PANE_Y)
         }
             .bounds(rightPaneX + 10, RIGHT_PANE_Y + 70, paneWidth - 20, BUTTON_HEIGHT)
             .build()
@@ -297,10 +296,10 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                 WaypointManager.clearNavigationTarget()
             } else {
                 WaypointManager.setNavigationTarget(waypoint.id)
-                // Refresh the waypoint list to update navigation indicators
-                refreshWaypointList(RIGHT_PANE_Y)
             }
-            refreshWaypointDetails()
+            // Rebuild the list (and details, via re-select) so the nav indicator in
+            // both panes reflects the change — including when stopping navigation.
+            refreshWaypointList(RIGHT_PANE_Y)
         }
             .bounds(rightPaneX + 10, RIGHT_PANE_Y + 100, paneWidth - 20, BUTTON_HEIGHT)
             .build()
@@ -358,13 +357,12 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
             addRenderableWidget(shareButton)
         }
 
-        // Teleport button (ops only — /tp requires permission level 2; also covers
-        // singleplayer-with-cheats, which grants level 4). Gated behind a config toggle.
+        // Teleport button — shown only when this player may actually run /tp.
+        // Gated behind a config toggle.
         val client = Minecraft.getInstance()
         val yOffset = if (!waypoint.isShared || waypoint.owner == client.player?.uuid) 160 else 130
 
-        if (WayfindrConfig.get().enableTeleport &&
-            client.player?.permissions()?.hasPermission(Permissions.COMMANDS_GAMEMASTER) == true) {
+        if (WayfindrConfig.get().enableTeleport && canUseTeleportCommand()) {
             val teleportButton = Button.builder(Component.literal("Teleport")) {
                 val pos = waypoint.getPosition()
                 val command = "tp ${pos.x.toInt()} ${pos.y.toInt()} ${pos.z.toInt()}"
