@@ -26,7 +26,7 @@
 ## Features
 * Create colored waypoints at your current position or at your crosshair location
 * Show/Hide waypoints
-* Teleport to waypoints (operators / singleplayer with cheats; toggleable in config)
+* Teleport to waypoints via `/tp` (works for operators / singleplayer with cheats; toggleable in config)
 * Manage waypoints through an in-game GUI
 * Per world persistent waypoints that save between game sessions
 * Configurable waypoint render distance and placement distance
@@ -71,7 +71,7 @@ Note: The Wayfindr Settings screen does not change keybinds; use the Controls me
 * **Max Waypoint Render Distance** - How far away waypoints will be visible (default: 100 blocks)
 * **Max Waypoint Placement Distance** - How far away you can place waypoints with the quick add key (default: 100 blocks)
 * **Death Waypoint** - When enabled, automatically creates a waypoint at your death location (default: Disabled)
-* **Teleport Button** - When enabled, shows a Teleport button in the waypoint details for operators (and singleplayer with cheats). Runs `/tp`, so it only works for players with permission level 2+ (default: Enabled)
+* **Teleport Button** - Shows a Teleport button in the waypoint details. It runs `/tp`, which the server authorizes at execution time, so it only functions for operators (or singleplayer with cheats); non-operators who click it simply get a "no permission" response. Turn this off to hide the button entirely (default: Enabled)
 
 ## Navigation Guidance
 The waypoint navigation feature helps guide you to your selected destination:
