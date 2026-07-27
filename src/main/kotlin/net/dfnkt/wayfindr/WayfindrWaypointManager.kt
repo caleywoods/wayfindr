@@ -1,13 +1,11 @@
 package net.dfnkt.wayfindr
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import net.minecraft.world.phys.Vec3
 import org.slf4j.LoggerFactory
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import java.util.UUID
-import kotlinx.serialization.modules.SerializersModule
 
 /**
  * Manages waypoints for the Wayfindr mod.
@@ -17,19 +15,7 @@ import kotlinx.serialization.modules.SerializersModule
  */
 object WaypointManager {
     private val logger = LoggerFactory.getLogger("wayfindr")
-    
-    // Create a serializers module with the UUID serializer
-    private val waypointSerializers = SerializersModule {
-        contextual(UUID::class, UUIDSerializer)
-    }
-    
-    // Initialize Json with the serializers module
-    private val json = Json { 
-        prettyPrint = true 
-        serializersModule = waypointSerializers
-        ignoreUnknownKeys = true
-    }
-    
+
     private val saveHandler = WayfindrSaveFileHandler
     
     /**
@@ -372,20 +358,6 @@ object WaypointManager {
     fun toggleWaypointVisibility(id: UUID): Boolean {
         val waypoint = getWaypoint(id) ?: return false
         waypoint.visible = !waypoint.visible
-        markPendingSave()
-        return true
-    }
-    
-    /**
-     * Changes the color of a waypoint.
-     * 
-     * @param id The UUID of the waypoint
-     * @param color The new color in RGB format
-     * @return True if the waypoint was found and its color changed, false otherwise
-     */
-    fun changeWaypointColor(id: UUID, color: Int): Boolean {
-        val waypoint = getWaypoint(id) ?: return false
-        waypoint.color = color
         markPendingSave()
         return true
     }

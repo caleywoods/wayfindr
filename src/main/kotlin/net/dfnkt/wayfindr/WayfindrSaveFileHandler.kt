@@ -178,59 +178,6 @@ object WayfindrSaveFileHandler {
     }
 
     /**
-     * Saves a single waypoint to the world-specific waypoints file.
-     * 
-     * This method:
-     * 1. Ensures the world directory exists
-     * 2. Deserializes the waypoint from JSON
-     * 3. Loads existing waypoints (from cache if available)
-     * 4. Adds the new waypoint to the list
-     * 5. Updates the cache and writes to disk
-     * 
-     * @param waypointJson JSON string representation of the waypoint to save
-     */
-    fun saveWaypoint(waypointJson: String) {
-        try {
-            if (!ensureDirectoriesExist()) {
-                return
-            }
-            
-            val waypointFile = getWorldWaypointFile()
-            val newWaypoint = json.decodeFromString<WaypointManager.Waypoint>(waypointJson)
-            
-            // Get existing waypoints (from cache or disk)
-            val waypoints = waypointCache.get(waypointFile.absolutePath) ?: if (waypointFile.exists()) {
-                try {
-                    json.decodeFromString<List<WaypointManager.Waypoint>>(waypointFile.readText())
-                } catch (e: Exception) {
-                    logger.error("Error reading existing waypoints, creating new file", e)
-                    listOf()
-                }
-            } else {
-                listOf()
-            }
-
-            val existingIndex = waypoints.indexOfFirst { it.id == newWaypoint.id }
-            val updatedWaypoints = if (existingIndex >= 0) {
-                logger.warn("Duplicate waypoint ID detected on save; replacing existing entry: ${newWaypoint.id}")
-                waypoints.toMutableList().also { it[existingIndex] = newWaypoint }
-            } else {
-                waypoints + newWaypoint
-            }
-            
-            // Update cache with new waypoint list
-            waypointCache.put(waypointFile.absolutePath, updatedWaypoints)
-            
-            // Write to file
-            waypointFile.writeText(json.encodeToString(updatedWaypoints))
-
-            logger.info("Saved waypoint to ${waypointFile.absolutePath}")
-        } catch (e: Exception) {
-            logger.error("Failed to save waypoint", e)
-        }
-    }
-
-    /**
      * Saves all waypoints to the current world's waypoint file.
      * 
      * This method:

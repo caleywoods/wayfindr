@@ -4,7 +4,6 @@ import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
 import net.minecraft.client.Minecraft
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
-import kotlin.random.Random
 import org.slf4j.LoggerFactory
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement
@@ -90,7 +89,7 @@ object WayfindrModClient : ClientModInitializer {
                     val waypointName = "Quick Waypoint ${WaypointManager.waypoints.size + 1}"
                     val position = WayfindrRaycast.getRaycastPosition(player)
 
-                    val randomColor = generateRandomColor()
+                    val randomColor = WaypointColors.random()
                     val dimension = player.level().dimension().identifier().toString()
 
                     WaypointManager.addWaypoint(waypointName, position, randomColor, dimension = dimension)
@@ -170,11 +169,4 @@ object WayfindrModClient : ClientModInitializer {
         }
     }
 
-    private fun generateRandomColor(): Int {
-        val red = Random.nextInt(100, 256)
-        val green = Random.nextInt(100, 256)
-        val blue = Random.nextInt(100, 256)
-
-        return (red shl 16) or (green shl 8) or blue
-    }
 }
