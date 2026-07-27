@@ -13,11 +13,13 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
     private var deathWaypointButton: Button? = null
     private var enableTeleportButton: Button? = null
     private var showTypeLabelsButton: Button? = null
+    private var deleteVerificationButton: Button? = null
 
     private var config = WayfindrConfig.get()
     private var createDeathWaypoint = config.createDeathWaypoint
     private var enableTeleport = config.enableTeleport
     private var showTypeLabels = config.showTypeLabels
+    private var deleteVerification = config.deleteVerification
 
     override fun init() {
         // Responsive layout: controls stack from the top with a fixed row stride, and
@@ -90,6 +92,16 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
                 button.message = Component.literal("Personal/Shared Labels: ${if (showTypeLabels) "Shown" else "Hidden"}")
             }.bounds(controlX, y, controlW, 20).build()
         )
+        y += rowStride
+
+        deleteVerificationButton = this.addRenderableWidget(
+            Button.builder(
+                Component.literal("Confirm Before Delete: ${if (deleteVerification) "Enabled" else "Disabled"}")
+            ) { button ->
+                deleteVerification = !deleteVerification
+                button.message = Component.literal("Confirm Before Delete: ${if (deleteVerification) "Enabled" else "Disabled"}")
+            }.bounds(controlX, y, controlW, 20).build()
+        )
 
         // Anchor Save/Cancel to the bottom; never let them sit under the last control.
         val bottomY = maxOf(height - 28, y + rowStride + 6)
@@ -130,7 +142,8 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
             createDeathWaypoint = createDeathWaypoint,
             enableTeleport = enableTeleport,
             sortMode = config.sortMode,
-            showTypeLabels = showTypeLabels
+            showTypeLabels = showTypeLabels,
+            deleteVerification = deleteVerification
         )
 
         WayfindrConfig.update(newConfig)

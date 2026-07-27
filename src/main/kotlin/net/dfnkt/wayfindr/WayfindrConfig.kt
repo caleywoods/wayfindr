@@ -28,7 +28,8 @@ data class WayfindrConfig(
     val createDeathWaypoint: Boolean = false,
     val enableTeleport: Boolean = true,
     val sortMode: WaypointSortMode = WaypointSortMode.NAME_ASC,
-    val showTypeLabels: Boolean = false
+    val showTypeLabels: Boolean = false,
+    val deleteVerification: Boolean = true
 ) {
     companion object {
         private val minecraftDir = File(System.getProperty("user.home"), ".minecraft")

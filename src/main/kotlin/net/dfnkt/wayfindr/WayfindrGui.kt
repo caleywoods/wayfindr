@@ -54,6 +54,8 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
     // UI components
     private lateinit var searchBox: EditBox
     private var selectedWaypoint: WaypointManager.Waypoint? = null
+    // Waypoint awaiting a delete confirmation click (when delete verification is enabled).
+    private var pendingDeleteId: UUID? = null
     private var paneWidth = 0
     private var rightPaneX = 0
 
@@ -300,6 +302,26 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
 
     private fun selectWaypoint(id: UUID) {
         selectedWaypoint = WaypointManager.getWaypoint(id)
+        // Cancel any armed delete confirmation when switching waypoints.
+        pendingDeleteId = null
+        refreshWaypointDetails()
+    }
+
+    /** Deletes a waypoint (removing it from the server too if it was shared) and clears selection. */
+    private fun deleteWaypoint(waypoint: WaypointManager.Waypoint) {
+        if (waypoint.isShared && Minecraft.getInstance().connection != null) {
+            val success = WayfindrNetworkClient.sendWaypointDeleteToServer(waypoint.id)
+            if (success) {
+                logger.info("Sent delete request to server for waypoint: ${waypoint.name}")
+            } else {
+                logger.error("Failed to send delete request to server for waypoint: ${waypoint.name}")
+            }
+        }
+        WaypointManager.removeWaypoint(waypoint.id)
+
+        pendingDeleteId = null
+        selectedWaypoint = null
+        refreshWaypointList(RIGHT_PANE_Y)
         refreshWaypointDetails()
     }
 
@@ -446,29 +468,20 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
             detailY += detailStride
         }
 
-        // Delete button (only if player owns the waypoint or it's personal)
+        // Delete button (only if player owns the waypoint or it's personal).
+        // When delete verification is enabled, the first click arms the button
+        // ("Confirm Delete?") and a second click on the same waypoint deletes.
         if (ownsOrPersonal) {
-            val deleteButton = Button.builder(Component.literal("Delete Waypoint")) {
-                if (waypoint.isShared) {
-                    // Send delete request to server if connected
-                    if (Minecraft.getInstance().connection != null) {
-                        val success = WayfindrNetworkClient.sendWaypointDeleteToServer(waypoint.id)
-                        if (success) {
-                            logger.info("Sent delete request to server for waypoint: ${waypoint.name}")
-                        } else {
-                            logger.error("Failed to send delete request to server for waypoint: ${waypoint.name}")
-                        }
-                    }
-
-                    // Also remove locally
-                    WaypointManager.removeWaypoint(waypoint.id)
+            val armed = pendingDeleteId == waypoint.id
+            val deleteLabel = if (armed) "Confirm Delete?" else "Delete Waypoint"
+            val deleteButton = Button.builder(Component.literal(deleteLabel)) {
+                if (WayfindrConfig.get().deleteVerification && !armed) {
+                    // First click: arm the confirmation and relabel the button.
+                    pendingDeleteId = waypoint.id
+                    refreshWaypointDetails()
                 } else {
-                    // Just remove locally
-                    WaypointManager.removeWaypoint(waypoint.id)
+                    deleteWaypoint(waypoint)
                 }
-                selectedWaypoint = null
-                refreshWaypointList(RIGHT_PANE_Y)
-                refreshWaypointDetails()
             }
                 .bounds(rightPaneX + edgeMargin, detailY, paneWidth - edgeMargin * 2, BUTTON_HEIGHT)
                 .build()
