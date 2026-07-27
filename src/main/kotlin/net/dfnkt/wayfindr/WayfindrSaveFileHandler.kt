@@ -108,14 +108,20 @@ object WayfindrSaveFileHandler {
      *
      * @return File object pointing to the world-specific waypoint file
      */
-    fun getWorldWaypointFile(): File {
-        val worldName = getCurrentWorldName()
+    fun getWorldWaypointFile(): File = getWorldWaypointFile(getCurrentWorldName())
+
+    /**
+     * Gets the waypoint file for a specific world name. Used so callers (e.g. a debounced
+     * flush) can write to the world the waypoints belong to rather than whatever world the
+     * client happens to be in when the write fires.
+     */
+    fun getWorldWaypointFile(worldName: String): File {
         val worldDir = File(worldsDir, sanitizeFileName(worldName))
-        
+
         if (!worldDir.exists() && !worldDir.mkdirs()) {
             logger.error("Failed to create world directory: ${worldDir.absolutePath}")
         }
-        
+
         return File(worldDir, "waypoints.json")
     }
     
@@ -234,17 +240,25 @@ object WayfindrSaveFileHandler {
      * 
      * @param waypoints List of waypoints to save
      */
-    fun saveAllWaypoints(waypoints: List<WaypointManager.Waypoint>) {
+    fun saveAllWaypoints(waypoints: List<WaypointManager.Waypoint>) =
+        saveAllWaypoints(getCurrentWorldName(), waypoints)
+
+    /**
+     * Saves all waypoints to a specific world's waypoint file. Prefer this when the target
+     * world is known (e.g. a debounced/lifecycle flush) so the write can't land in the wrong
+     * world's file if the client has since changed worlds.
+     */
+    fun saveAllWaypoints(worldName: String, waypoints: List<WaypointManager.Waypoint>) {
         try {
             if (!ensureDirectoriesExist()) {
                 return
             }
-            
-            val waypointFile = getWorldWaypointFile()
-            
+
+            val waypointFile = getWorldWaypointFile(worldName)
+
             // Update cache with new waypoint list
             waypointCache.put(waypointFile.absolutePath, waypoints)
-            
+
             waypointFile.writeText(json.encodeToString(waypoints))
             logger.info("Saved ${waypoints.size} waypoints to ${waypointFile.absolutePath}")
         } catch (e: Exception) {

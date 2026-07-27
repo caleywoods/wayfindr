@@ -675,6 +675,8 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
     override fun onClose() {
         // Save scroll position to manager
         WaypointManager.setWaypointListScrollPosition(scrollOffset)
+        // Flush any debounced waypoint edits made while the manager was open.
+        WaypointManager.flushPendingSaves()
         super.onClose()
     }
 

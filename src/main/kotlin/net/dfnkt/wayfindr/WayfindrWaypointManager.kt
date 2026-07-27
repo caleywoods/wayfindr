@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import net.minecraft.world.phys.Vec3
 import org.slf4j.LoggerFactory
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import java.util.UUID
 import kotlinx.serialization.modules.SerializersModule
 
@@ -58,7 +59,55 @@ object WaypointManager {
      * The current world name.
      */
     private var currentWorldName: String = "default"
-    
+
+    /**
+     * Debounced-save state. Field edits (visibility, color, rename, delete, updates) mark
+     * the list dirty rather than rewriting the whole file on every change; a client-tick
+     * timer flushes after a short idle window, and the forced-flush points (add, GUI close,
+     * disconnect, client stop) flush immediately. This avoids full-file rewrites on every
+     * toggle when there are many waypoints.
+     *
+     * Thread-safety: [waypoints] and this state are only ever touched from the client main
+     * thread. Everything funnels there — ticks, GUI input, and network handlers (which use
+     * `context.client().execute { }` to marshal onto it). Callers reached from other threads
+     * (e.g. connection events) must likewise defer via `client.execute { }` before touching
+     * this manager, or the unsynchronized list access here can race.
+     */
+    private var pendingSave = false
+    private var ticksSincePendingSave = 0
+    private const val AUTOSAVE_DELAY_TICKS = 40 // ~2 seconds at 20 ticks/sec
+
+    /** Marks the list dirty so the next debounce tick (or forced flush) writes it. */
+    private fun markPendingSave() {
+        pendingSave = true
+        ticksSincePendingSave = 0
+    }
+
+    /** Writes immediately, clearing pending state. Used for adds and forced flushes. */
+    private fun saveNow() {
+        saveHandler.saveAllWaypoints(currentWorldName, waypoints)
+        pendingSave = false
+        ticksSincePendingSave = 0
+    }
+
+    /**
+     * Flushes any pending debounced save to disk now. Safe to call when nothing is pending
+     * (no-op). Called from the debounce tick and the lifecycle flush points.
+     */
+    fun flushPendingSaves() {
+        if (!pendingSave) return
+        saveNow()
+    }
+
+    /** Advances the debounce timer each client tick and flushes when the idle window elapses. */
+    private fun onClientTick() {
+        if (!pendingSave) return
+        ticksSincePendingSave++
+        if (ticksSincePendingSave >= AUTOSAVE_DELAY_TICKS) {
+            flushPendingSaves()
+        }
+    }
+
     /**
      * Initializes waypoints by loading them from the save file.
      * Also registers world change listeners.
@@ -69,7 +118,13 @@ object WaypointManager {
             // Initial load
             loadWaypointsForCurrentWorld()
         }
-        
+
+        // Drive the debounced-save timer.
+        ClientTickEvents.END_CLIENT_TICK.register { onClientTick() }
+
+        // Flush any pending save when the client is shutting down.
+        ClientLifecycleEvents.CLIENT_STOPPING.register { flushPendingSaves() }
+
         // Load waypoints for the current world
         loadWaypointsForCurrentWorld()
     }
@@ -98,9 +153,13 @@ object WaypointManager {
         }
         val deduped = map.values.toList()
         waypoints = deduped.toMutableList()
+        // Freshly loaded list matches disk; drop any stale pending flag so the debounce
+        // tick can't later write this (or worse, previous-world) state unexpectedly.
+        pendingSave = false
+        ticksSincePendingSave = 0
         if (deduped.size != loaded.size) {
             logger.warn("Detected ${loaded.size - deduped.size} duplicate waypoint(s) by ID in '$currentWorldName'; cleaned and resaved")
-            saveHandler.saveAllWaypoints(waypoints)
+            saveHandler.saveAllWaypoints(currentWorldName, waypoints)
         }
         logger.info("Loaded ${waypoints.size} waypoints for world '$currentWorldName'")
     }
@@ -134,11 +193,12 @@ object WaypointManager {
         if (existingIndex >= 0) {
             // Replace existing entry with the same ID
             waypoints[existingIndex] = waypoint
-            saveHandler.saveAllWaypoints(waypoints)
         } else {
             waypoints.add(waypoint)
-            saveHandler.saveWaypoint(json.encodeToString(waypoint))
         }
+        // Adds flush immediately (not debounced) so a newly created waypoint survives an
+        // immediate crash. This also persists any pending edits from before the add.
+        saveNow()
         return waypoint
     }
     
@@ -156,8 +216,8 @@ object WaypointManager {
         if (navigationTarget == id) {
             navigationTarget = null
         }
-        
-        saveHandler.saveAllWaypoints(waypoints)
+
+        markPendingSave()
         return true
     }
     
@@ -172,7 +232,7 @@ object WaypointManager {
         if (index < 0) return false
         
         waypoints[index] = waypoint
-        saveHandler.saveAllWaypoints(waypoints)
+        markPendingSave()
         return true
     }
     
@@ -299,7 +359,8 @@ object WaypointManager {
      */
     fun replaceAllWaypoints(newWaypoints: List<Waypoint>) {
         waypoints = newWaypoints.toMutableList()
-        saveHandler.saveAllWaypoints(waypoints)
+        // Server sync is an authoritative, infrequent replace — persist it immediately.
+        saveNow()
     }
     
     /**
@@ -311,7 +372,7 @@ object WaypointManager {
     fun toggleWaypointVisibility(id: UUID): Boolean {
         val waypoint = getWaypoint(id) ?: return false
         waypoint.visible = !waypoint.visible
-        saveHandler.saveAllWaypoints(waypoints)
+        markPendingSave()
         return true
     }
     
@@ -325,7 +386,7 @@ object WaypointManager {
     fun changeWaypointColor(id: UUID, color: Int): Boolean {
         val waypoint = getWaypoint(id) ?: return false
         waypoint.color = color
-        saveHandler.saveAllWaypoints(waypoints)
+        markPendingSave()
         return true
     }
     
@@ -339,12 +400,12 @@ object WaypointManager {
     fun renameWaypoint(id: UUID, newName: String): Boolean {
         val waypoint = getWaypoint(id) ?: return false
         waypoint.name = newName
-        saveHandler.saveAllWaypoints(waypoints)
-        
+        markPendingSave()
+
         if (waypoint.isShared) {
             WayfindrNetworkClient.sendWaypointUpdateToServer(waypoint)
         }
-        
+
         return true
     }
 

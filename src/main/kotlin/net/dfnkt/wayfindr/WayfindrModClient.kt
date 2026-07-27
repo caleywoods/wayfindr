@@ -112,6 +112,10 @@ object WayfindrModClient : ClientModInitializer {
         // When disconnecting from a server or singleplayer world
         ClientPlayConnectionEvents.DISCONNECT.register { handler, client ->
             logger.info("Disconnected from world")
+            // Persist any debounced waypoint edits. Marshal onto the client thread so this
+            // can't race with main-thread mutations regardless of which thread fires the
+            // event — WaypointManager's state is only safe to touch from the client thread.
+            client.execute { WaypointManager.flushPendingSaves() }
         }
     }
 
