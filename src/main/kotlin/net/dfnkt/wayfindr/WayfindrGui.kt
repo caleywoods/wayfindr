@@ -418,7 +418,9 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
         if (teleportShown) {
             val teleportButton = Button.builder(Component.literal("Teleport")) {
                 val pos = waypoint.getPosition()
-                val command = "tp ${pos.x.toInt()} ${pos.y.toInt()} ${pos.z.toInt()}"
+                // Route through the waypoint's dimension so teleporting across
+                // dimensions (e.g. overworld -> nether) lands in the right place.
+                val command = "execute in ${waypoint.dimension} run tp ${pos.x.toInt()} ${pos.y.toInt()} ${pos.z.toInt()}"
                 client.connection?.sendCommand(command)
             }
                 .bounds(rightPaneX + edgeMargin, detailY, paneWidth - edgeMargin * 2, BUTTON_HEIGHT)
