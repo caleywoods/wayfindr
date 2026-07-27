@@ -12,10 +12,12 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
     private var maxRaycastDistanceSlider: AbstractSliderButton? = null
     private var deathWaypointButton: Button? = null
     private var enableTeleportButton: Button? = null
+    private var showTypeLabelsButton: Button? = null
 
     private var config = WayfindrConfig.get()
     private var createDeathWaypoint = config.createDeathWaypoint
     private var enableTeleport = config.enableTeleport
+    private var showTypeLabels = config.showTypeLabels
 
     override fun init() {
         // Responsive layout: controls stack from the top with a fixed row stride, and
@@ -78,6 +80,16 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
                 button.message = Component.literal("Teleport Button (ops): ${if (enableTeleport) "Enabled" else "Disabled"}")
             }.bounds(controlX, y, controlW, 20).build()
         )
+        y += rowStride
+
+        showTypeLabelsButton = this.addRenderableWidget(
+            Button.builder(
+                Component.literal("Personal/Shared Labels: ${if (showTypeLabels) "Shown" else "Hidden"}")
+            ) { button ->
+                showTypeLabels = !showTypeLabels
+                button.message = Component.literal("Personal/Shared Labels: ${if (showTypeLabels) "Shown" else "Hidden"}")
+            }.bounds(controlX, y, controlW, 20).build()
+        )
 
         // Anchor Save/Cancel to the bottom; never let them sit under the last control.
         val bottomY = maxOf(height - 28, y + rowStride + 6)
@@ -117,7 +129,8 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
             quickAddKey = config.quickAddKey,
             createDeathWaypoint = createDeathWaypoint,
             enableTeleport = enableTeleport,
-            sortMode = config.sortMode
+            sortMode = config.sortMode,
+            showTypeLabels = showTypeLabels
         )
 
         WayfindrConfig.update(newConfig)

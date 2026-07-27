@@ -91,9 +91,28 @@ Wayfindr supports sharing waypoints with other players on multiplayer servers:
 4. Shared waypoints are marked with a `[Shared]` tag in the waypoint list (personal ones show `[Personal]`)
 5. Only the waypoint creator or server operators can modify or delete shared waypoints
 
+## Server Options (Minecraft 26.2 only)
+
+> **Note:** This is a Minecraft 26.2 feature and is only available on the `mc26.2` build.
+
+Server owners can control waypoint sharing with an optional options file. Create a file named `wayfindr_server_options.json` in the server's world directory (the same folder as `wayfindr_shared_waypoints.json`):
+
+```json
+{
+  "sharingEnabled": true,
+  "shareDenylist": ["Griefer123", "550e8400-e29b-41d4-a716-446655440000"]
+}
+```
+
+* **`sharingEnabled`** — set to `false` to reject all waypoint-share requests server-wide.
+* **`shareDenylist`** — a list of players who may not share waypoints. Each entry may be a player name or a player UUID (matched case-insensitively).
+
+The mod **never creates this file for you**. If it is missing, empty, or unreadable, Wayfindr uses permissive defaults (sharing enabled, no denylist) — so a stock install behaves exactly as before. Changes take effect on server start. Players whose share is rejected receive a chat message explaining why.
+
 ## Data Storage
 * **Client-side waypoints** are stored in `C:\Users\{username}\.minecraft\config\wayfindr\waypoints.json` (paths may vary on other operating systems)
 * **Server-side shared waypoints** are stored in the server's world directory under `wayfindr/shared_waypoints.json`
+* **Server options** (Minecraft 26.2 only) are read from an optional `wayfindr_server_options.json` in the server's world directory — see [Server Options](#server-options-minecraft-262-only). This file is never created automatically.
 
 ## Technical Architecture
 Wayfindr is built with a client-server architecture that enables both personal and shared waypoints:

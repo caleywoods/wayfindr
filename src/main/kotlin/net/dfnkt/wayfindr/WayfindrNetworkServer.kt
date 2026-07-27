@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.server.permissions.Permissions
+import net.minecraft.network.chat.Component
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -45,9 +46,23 @@ object WayfindrNetworkServer {
             
             context.server().execute {
                 try {
+                    val sender = context.player()
+
+                    // Respect server-owner sharing controls (optional options file).
+                    if (!WayfindrServerOptions.isSharingEnabled()) {
+                        logger.info("Rejected share from ${sender.name.string}: sharing disabled by server options")
+                        sender.sendSystemMessage(Component.literal("§c[Wayfindr]§r Waypoint sharing is disabled on this server."))
+                        return@execute
+                    }
+                    if (WayfindrServerOptions.isSharingDenied(sender.uuid, sender.name.string)) {
+                        logger.info("Rejected share from ${sender.name.string}: player is on the share denylist")
+                        sender.sendSystemMessage(Component.literal("§c[Wayfindr]§r You are not allowed to share waypoints on this server."))
+                        return@execute
+                    }
+
                     val receivedWaypoint = json.decodeFromString<WaypointManager.Waypoint>(jsonData)
                     logger.info("Decoded waypoint: ${receivedWaypoint.name} (ID: ${receivedWaypoint.id})")
-                    
+
                     // Create a new waypoint with proper ownership and shared status
                     val waypoint = receivedWaypoint.copy(
                         owner = context.player().uuid,

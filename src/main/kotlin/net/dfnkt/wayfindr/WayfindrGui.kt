@@ -292,7 +292,9 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
      * based on whether it's shared or personal
      */
     private fun buildWaypointButtonText(waypoint: WaypointManager.Waypoint): Component {
-        val prefix = if (waypoint.isShared) "[Shared] " else "[Personal] "
+        val prefix = if (WayfindrConfig.get().showTypeLabels) {
+            if (waypoint.isShared) "[Shared] " else "[Personal] "
+        } else ""
         return Component.literal(prefix + waypoint.name)
     }
 
@@ -504,8 +506,10 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
 
         // Draw selected waypoint details
         selectedWaypoint?.let { waypoint ->
-            // Draw waypoint name with shared/personal indicator
-            val namePrefix = if (waypoint.isShared) "[Shared] " else "[Personal] "
+            // Draw waypoint name with optional shared/personal indicator
+            val namePrefix = if (WayfindrConfig.get().showTypeLabels) {
+                if (waypoint.isShared) "[Shared] " else "[Personal] "
+            } else ""
             val lineStep = font.lineHeight + 1
             context.text(
                 font,

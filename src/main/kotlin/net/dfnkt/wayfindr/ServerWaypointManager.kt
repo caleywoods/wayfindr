@@ -29,7 +29,10 @@ object ServerWaypointManager {
      */
     fun initialize(minecraftServer: MinecraftServer) {
         server = minecraftServer
-        
+
+        // Load optional server-owner options (sharing on/off, share denylist)
+        WayfindrServerOptions.initialize(minecraftServer)
+
         // Initialize the save handler
         ServerWaypointSaveHandler.initialize(minecraftServer)
         
