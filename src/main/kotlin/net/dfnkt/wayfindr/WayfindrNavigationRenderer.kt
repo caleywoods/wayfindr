@@ -111,82 +111,83 @@ object WayfindrNavigationRenderer {
         // Rotate to point in the correct direction (add 180 to fix orientation)
         pose.rotate(Math.toRadians((direction + 180f).toDouble()).toFloat())
 
-        // Draw a smooth arrow with glow effect
-        val arrowSize = ARROW_SIZE * 0.8f
-
-        // Draw glow effect first (larger triangle with semi-transparent color)
-        drawSmoothTriangle(
-            context,
-            0f, -arrowSize / 2 - 2,                // Top point
-            -arrowSize / 2 - 2, arrowSize / 2 + 2, // Bottom left
-            arrowSize / 2 + 2, arrowSize / 2 + 2,  // Bottom right
-            ARROW_GLOW_COLOR
-        )
-
-        // Draw the main arrow as a single white triangle
-        drawSmoothTriangle(
-            context,
-            0f, -arrowSize / 2,                // Top point
-            -arrowSize / 2, arrowSize / 2,     // Bottom left
-            arrowSize / 2, arrowSize / 2,      // Bottom right
-            ARROW_COLOR
-        )
+        // Replay the pre-baked anti-aliased arrow (glow + arrow). The pose rotation above
+        // orients it; the pixel coverage itself was computed once (see [arrowRuns]).
+        for (run in arrowRuns) {
+            context.fill(run.xStart, run.y, run.xEnd, run.y + 1, run.color)
+        }
 
         pose.popMatrix()
     }
 
+    /** A horizontal run of identically-colored pixels in the baked arrow (xEnd exclusive). */
+    private data class ArrowRun(val y: Int, val xStart: Int, val xEnd: Int, val color: Int)
+
     /**
-     * Helper method to draw a smooth anti-aliased triangle.
+     * The arrow is a fixed shape; only its on-screen rotation changes (applied via the pose
+     * matrix). So we rasterize the anti-aliased glow + arrow triangles exactly once, coalesce
+     * each row into runs, and replay those every frame. Keeps the smooth edges the AA gave us
+     * without re-rasterizing 64 samples/pixel every frame.
      */
-    private fun drawSmoothTriangle(
-        context: GuiGraphicsExtractor,
-        x1: Float, y1: Float,
-        x2: Float, y2: Float,
-        x3: Float, y3: Float,
+    private val arrowRuns: List<ArrowRun> by lazy { buildArrowRuns() }
+
+    private fun buildArrowRuns(): List<ArrowRun> {
+        val arrowSize = ARROW_SIZE * 0.8f
+        val runs = ArrayList<ArrowRun>()
+        // Glow first (drawn under), then the main arrow on top — same order as before.
+        rasterizeTriangleRuns(runs,
+            0f, -arrowSize / 2 - 2, -arrowSize / 2 - 2, arrowSize / 2 + 2, arrowSize / 2 + 2, arrowSize / 2 + 2,
+            ARROW_GLOW_COLOR)
+        rasterizeTriangleRuns(runs,
+            0f, -arrowSize / 2, -arrowSize / 2, arrowSize / 2, arrowSize / 2, arrowSize / 2,
+            ARROW_COLOR)
+        return runs
+    }
+
+    /** Coverage-samples a triangle (as the old drawSmoothTriangle did) into coalesced row runs. */
+    private fun rasterizeTriangleRuns(
+        out: MutableList<ArrowRun>,
+        x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float,
         color: Int
     ) {
-        // Calculate bounding box
         val minX = minOf(x1, x2, x3).toInt() - 1
         val maxX = maxOf(x1, x2, x3).toInt() + 1
         val minY = minOf(y1, y2, y3).toInt() - 1
         val maxY = maxOf(y1, y2, y3).toInt() + 1
 
-        // Extract color components
         val alpha = (color shr 24) and 0xFF
         val red = (color shr 16) and 0xFF
         val green = (color shr 8) and 0xFF
         val blue = color and 0xFF
+        val step = 1.0f / ANTI_ALIASING_SAMPLES
+        val sampleWeight = 1.0f / (ANTI_ALIASING_SAMPLES * ANTI_ALIASING_SAMPLES)
 
-        // For each pixel in the bounding box
         for (y in minY..maxY) {
+            var runStart = minX
+            var runColor = 0 // 0 == transparent, breaks a run
             for (x in minX..maxX) {
-                // Perform supersampling anti-aliasing
                 var coverage = 0f
-                val step = 1.0f / ANTI_ALIASING_SAMPLES
-
-                // Sample multiple points within the pixel
                 for (sy in 0 until ANTI_ALIASING_SAMPLES) {
                     for (sx in 0 until ANTI_ALIASING_SAMPLES) {
                         val sampleX = x + (sx + 0.5f) * step
                         val sampleY = y + (sy + 0.5f) * step
-
-                        // Check if the sample point is inside the triangle
                         if (isPointInTriangle(sampleX, sampleY, x1, y1, x2, y2, x3, y3)) {
-                            coverage += 1.0f / (ANTI_ALIASING_SAMPLES * ANTI_ALIASING_SAMPLES)
+                            coverage += sampleWeight
                         }
                     }
                 }
-
-                // Only draw if there's some coverage
-                if (coverage > 0) {
-                    // Calculate the final alpha based on coverage
+                val pxColor = if (coverage > 0f) {
                     val finalAlpha = (alpha * coverage).toInt().coerceIn(0, 255)
-                    val finalColor = (finalAlpha shl 24) or (red shl 16) or (green shl 8) or blue
+                    (finalAlpha shl 24) or (red shl 16) or (green shl 8) or blue
+                } else 0
 
-                    // Draw the pixel
-                    context.fill(x, y, x + 1, y + 1, finalColor)
+                if (pxColor != runColor) {
+                    if (runColor != 0) out.add(ArrowRun(y, runStart, x, runColor))
+                    runColor = pxColor
+                    runStart = x
                 }
             }
+            if (runColor != 0) out.add(ArrowRun(y, runStart, maxX + 1, runColor))
         }
     }
 
