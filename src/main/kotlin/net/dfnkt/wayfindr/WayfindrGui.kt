@@ -312,9 +312,9 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
         // screens, roomier on large ones.
         val buttonCount = 3 + (if (ownsOrPersonal) 1 else 0) +
             (if (teleportShown) 1 else 0) + (if (ownsOrPersonal) 1 else 0)
-        // Start below the name + coords (and owner, if shown) header lines; end above
-        // the bottom Settings/Close row. Both bounds are proportional to the viewport.
-        val headerLines = if (waypoint.isShared && waypoint.owner != null) 3 else 2
+        // Start below the name + coords + dimension (and owner, if shown) header lines;
+        // end above the bottom Settings/Close row. Both bounds are proportional to the viewport.
+        val headerLines = if (waypoint.isShared && waypoint.owner != null) 4 else 3
         val topY = contentTop + headerLines * (font.lineHeight + 1) + vGap
         val bottomLimit = bottomRowY - vGap
         val detailStride = ((bottomLimit - topY) / buttonCount).coerceIn(BUTTON_HEIGHT + 1, BUTTON_HEIGHT + 8)
@@ -513,6 +513,17 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                 true
             )
 
+            // Draw the dimension this waypoint belongs to
+            val dimensionText = "Dimension: ${formatDimension(waypoint.dimension)}"
+            context.text(
+                font,
+                dimensionText,
+                rightPaneX + edgeMargin,
+                contentTop + lineStep * 2,
+                0xFFAAAAAA.toInt(),
+                true
+            )
+
             // Draw owner info if shared
             if (waypoint.isShared && waypoint.owner != null) {
                 val ownerName = getPlayerNameFromUUID(waypoint.owner!!)
@@ -521,12 +532,24 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                     font,
                     ownerText,
                     rightPaneX + edgeMargin,
-                    contentTop + lineStep * 2,
+                    contentTop + lineStep * 3,
                     0xFFAAAAAA.toInt(),
                     true
                 )
             }
         }
+    }
+
+    /**
+     * Turns a dimension id like "minecraft:the_nether" into a readable label
+     * ("The Nether"). Falls back to the raw id for non-namespaced values.
+     */
+    private fun formatDimension(dimension: String): String {
+        return dimension.substringAfter(':', dimension)
+            .split('_')
+            .filter { it.isNotEmpty() }
+            .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+            .ifEmpty { dimension }
     }
 
     /**
