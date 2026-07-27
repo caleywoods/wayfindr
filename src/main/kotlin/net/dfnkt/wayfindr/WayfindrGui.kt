@@ -71,12 +71,15 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
         this.paneWidth = this.width / 2 - 8
         this.rightPaneX = this.width - this.paneWidth
 
-        // Search box
+        // Search box — leaves room on its right for the sort-cycle button so the row
+        // isn't crowded and no vertical space is taken from the list.
+        val sortButtonWidth = (paneWidth * 0.22f).toInt().coerceIn(44, 72)
+        val searchBoxWidth = paneWidth - edgeMargin * 2 - sortButtonWidth - vGap
         this.searchBox = EditBox(
             this.font,
             edgeMargin,
             searchY,
-            paneWidth - edgeMargin * 2,
+            searchBoxWidth,
             BUTTON_HEIGHT,
             Component.literal("Search waypoints...")
         )
@@ -85,6 +88,18 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
         }
         addRenderableWidget(this.searchBox)
         setInitialFocus(this.searchBox)
+
+        // Sort-cycle button: cycles Name A-Z -> Z-A -> Distance and persists the choice.
+        addRenderableWidget(
+            Button.builder(Component.literal(sortButtonLabel(WayfindrConfig.get().sortMode))) { button ->
+                val next = nextSortMode(WayfindrConfig.get().sortMode)
+                WayfindrConfig.update(WayfindrConfig.get().copy(sortMode = next))
+                button.message = Component.literal(sortButtonLabel(next))
+                refreshWaypointList(RIGHT_PANE_Y)
+            }
+                .bounds(edgeMargin + searchBoxWidth + vGap, searchY, sortButtonWidth, BUTTON_HEIGHT)
+                .build()
+        )
 
         // Filter buttons
         addRenderableWidget(
@@ -661,6 +676,50 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
             (it.isShared && showSharedWaypoints) || (!it.isShared && showPersonalWaypoints)
         }.toMutableList()
 
-        return waypoints
+        return sortWaypoints(waypoints)
+    }
+
+    /** Compact label shown on the sort-cycle button for each mode. */
+    private fun sortButtonLabel(mode: WaypointSortMode): String = when (mode) {
+        WaypointSortMode.NAME_ASC -> "A-Z"
+        WaypointSortMode.NAME_DESC -> "Z-A"
+        WaypointSortMode.DISTANCE -> "Dist"
+    }
+
+    /** Next mode in the cycle: A-Z -> Z-A -> Distance -> A-Z. */
+    private fun nextSortMode(mode: WaypointSortMode): WaypointSortMode = when (mode) {
+        WaypointSortMode.NAME_ASC -> WaypointSortMode.NAME_DESC
+        WaypointSortMode.NAME_DESC -> WaypointSortMode.DISTANCE
+        WaypointSortMode.DISTANCE -> WaypointSortMode.NAME_ASC
+    }
+
+    /**
+     * Orders the list per the configured [WaypointSortMode]. For [WaypointSortMode.DISTANCE],
+     * waypoints in the player's current dimension come first (closest → furthest); waypoints in
+     * other dimensions have no meaningful distance, so they sort after, alphabetically.
+     */
+    private fun sortWaypoints(waypoints: List<WaypointManager.Waypoint>): List<WaypointManager.Waypoint> {
+        val nameComparator = compareBy<WaypointManager.Waypoint> { it.name.lowercase(Locale.getDefault()) }
+        return when (WayfindrConfig.get().sortMode) {
+            WaypointSortMode.NAME_ASC -> waypoints.sortedWith(nameComparator)
+            WaypointSortMode.NAME_DESC -> waypoints.sortedWith(nameComparator.reversed())
+            WaypointSortMode.DISTANCE -> {
+                val player = Minecraft.getInstance().player
+                    ?: return waypoints.sortedWith(nameComparator)
+                val playerPos = player.position()
+                val currentDimension = player.level().dimension().identifier().toString()
+                waypoints.sortedWith(
+                    compareBy<WaypointManager.Waypoint> { if (it.dimension == currentDimension) 0 else 1 }
+                        .thenComparator { a, b ->
+                            if (a.dimension == currentDimension && b.dimension == currentDimension) {
+                                playerPos.distanceToSqr(a.getPosition())
+                                    .compareTo(playerPos.distanceToSqr(b.getPosition()))
+                            } else {
+                                nameComparator.compare(a, b)
+                            }
+                        }
+                )
+            }
+        }
     }
 }

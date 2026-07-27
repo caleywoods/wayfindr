@@ -6,6 +6,19 @@ import org.lwjgl.glfw.GLFW
 import java.io.File
 import org.slf4j.LoggerFactory
 
+/**
+ * How the waypoint manager list is ordered.
+ * - [NAME_ASC] / [NAME_DESC]: alphabetical by name.
+ * - [DISTANCE]: closest first, for waypoints in the player's current dimension;
+ *   waypoints in other dimensions (no meaningful distance) sort after those, by name.
+ */
+@Serializable
+enum class WaypointSortMode {
+    NAME_ASC,
+    NAME_DESC,
+    DISTANCE
+}
+
 @Serializable
 data class WayfindrConfig(
     val maxRenderDistance: Double = 200.0,
@@ -13,7 +26,8 @@ data class WayfindrConfig(
     val openMenuKey: Int = GLFW.GLFW_KEY_M,
     val quickAddKey: Int = GLFW.GLFW_KEY_N,
     val createDeathWaypoint: Boolean = false,
-    val enableTeleport: Boolean = true
+    val enableTeleport: Boolean = true,
+    val sortMode: WaypointSortMode = WaypointSortMode.NAME_ASC
 ) {
     companion object {
         private val minecraftDir = File(System.getProperty("user.home"), ".minecraft")

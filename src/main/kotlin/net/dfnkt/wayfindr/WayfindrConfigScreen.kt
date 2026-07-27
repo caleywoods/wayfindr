@@ -116,7 +116,8 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
             openMenuKey = config.openMenuKey,
             quickAddKey = config.quickAddKey,
             createDeathWaypoint = createDeathWaypoint,
-            enableTeleport = enableTeleport
+            enableTeleport = enableTeleport,
+            sortMode = config.sortMode
         )
 
         WayfindrConfig.update(newConfig)
