@@ -40,9 +40,13 @@ object WaypointLabels {
         val screenWidth = client.window.guiScaledWidth
         val screenHeight = client.window.guiScaledHeight
         val maxDistance = WayfindrConfig.get().maxRenderDistance
+        // Only label waypoints in the player's current dimension — otherwise nether
+        // coords would project onto the overworld (and vice versa).
+        val currentDimension = client.player?.level()?.dimension()?.identifier()?.toString() ?: return
 
         for (waypoint in WaypointManager.waypoints) {
             if (!waypoint.visible || waypoint.name.isEmpty()) continue
+            if (waypoint.dimension != currentDimension) continue
 
             val pos = waypoint.position.toVec3d()
             val distance = cam.distanceTo(pos)

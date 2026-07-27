@@ -44,8 +44,13 @@ object WayfindrModClient : ClientModInitializer {
             // Snapshot the camera transform so the HUD can project waypoint name labels.
             WaypointLabels.capture(cameraState)
 
+            // Only render beams for waypoints in the player's current dimension so
+            // e.g. nether waypoints don't appear in the overworld at matching coords.
+            val currentDimension = Minecraft.getInstance().player?.level()?.dimension()?.identifier()?.toString()
+
             for (waypoint in WaypointManager.waypoints) {
                 if (!waypoint.visible) continue
+                if (waypoint.dimension != currentDimension) continue
 
                 val waypointPos = waypoint.position.toVec3d()
                 val distance = cameraPos.distanceTo(waypointPos)
