@@ -39,9 +39,18 @@ version = project.mod_version
 group = project.maven_group
 
 base {
-	archivesName = project.hasProperty('archives_base_name') ? 
-	    project.getProperty('archives_base_name') : 
+	archivesName = project.hasProperty('archives_base_name') ?
+	    project.getProperty('archives_base_name') :
 	    "Wayfindr-${project.mod_version}-${project.minecraft_version}"
+}
+
+loom {
+	runs {
+		// Pin the client username so it's stable across launches (default is randomized)
+		client {
+			programArgs "--username", "dfnkt"
+		}
+	}
 }
 
 repositories {

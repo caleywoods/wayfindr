@@ -27,23 +27,35 @@ object WayfindrNetworkClient {
                     logger.info("Received waypoint sync data: $jsonData")
                     val serverWaypoints = json.decodeFromString<List<WaypointManager.Waypoint>>(jsonData)
                     logger.info("Received waypoint sync with ${serverWaypoints.size} waypoints")
-                    
-                    // Get current local waypoints (non-shared only)
-                    val localWaypoints = WaypointManager.waypoints.filter { !it.isShared }
-                    
-                    // Create a set of existing waypoint IDs for quick lookup
-                    val existingWaypointIds = WaypointManager.waypoints.map { it.id }.toSet()
-                    
-                    // Filter server waypoints to only include ones that don't already exist locally
-                    val newServerWaypoints = serverWaypoints.filter { !existingWaypointIds.contains(it.id) }
-                    
-                    // Combine local non-shared waypoints with unique server waypoints
-                    val combinedWaypoints = localWaypoints + newServerWaypoints
-                    
-                    // Use replaceAllWaypoints with the combined list
+
+                    // The server is the source of truth for shared waypoints. Rebuild the
+                    // local list as: all personal waypoints + all server (shared) waypoints.
+                    val serverIds = serverWaypoints.map { it.id }.toSet()
+                    val localPlayerId = context.client().player?.uuid
+
+                    val preservedLocal = mutableListOf<WaypointManager.Waypoint>()
+                    var recoveredCount = 0
+                    for (wp in WaypointManager.waypoints) {
+                        when {
+                            // Keep personal waypoints untouched.
+                            !wp.isShared -> preservedLocal.add(wp)
+                            // Shared and still on the server: the server copy below wins; skip.
+                            serverIds.contains(wp.id) -> {}
+                            // Shared locally, but the server doesn't have it. If we own it, the
+                            // share never took (e.g. rejected by server options) — recover it as a
+                            // personal waypoint instead of losing it. Someone else's missing shared
+                            // waypoint was deleted server-side, so drop it.
+                            wp.owner != null && wp.owner == localPlayerId -> {
+                                preservedLocal.add(wp.copy(isShared = false, owner = null))
+                                recoveredCount++
+                            }
+                        }
+                    }
+
+                    val combinedWaypoints = preservedLocal + serverWaypoints
                     WaypointManager.replaceAllWaypoints(combinedWaypoints)
-                    
-                    logger.info("Synchronized ${newServerWaypoints.size} new shared waypoints from server while preserving ${localWaypoints.size} local waypoints")
+
+                    logger.info("Synced ${serverWaypoints.size} shared waypoints from server, kept ${preservedLocal.size} local (recovered $recoveredCount unshared)")
                 } catch (e: Exception) {
                     logger.error("Error processing waypoint sync", e)
                 }
