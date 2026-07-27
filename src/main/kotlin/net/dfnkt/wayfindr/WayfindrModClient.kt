@@ -80,8 +80,9 @@ object WayfindrModClient : ClientModInitializer {
                     val position = WayfindrRaycast.getRaycastPosition(player)
 
                     val randomColor = generateRandomColor()
+                    val dimension = player.level().dimension().identifier().toString()
 
-                    WaypointManager.addWaypoint(waypointName, position, randomColor)
+                    WaypointManager.addWaypoint(waypointName, position, randomColor, dimension = dimension)
                 }
             }
         }

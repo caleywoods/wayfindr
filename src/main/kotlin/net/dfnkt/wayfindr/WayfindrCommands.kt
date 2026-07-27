@@ -118,8 +118,9 @@ object WayfindrCommands {
         // Use provided color or default
         val finalColor = colorInt ?: 0xFF0000 // Default red
 
-        // Add waypoint to the manager
-        val waypoint = WaypointManager.addWaypoint(name, position, finalColor)
+        // Add waypoint to the manager, tagging the player's current dimension
+        val dimension = player.level().dimension().identifier().toString()
+        val waypoint = WaypointManager.addWaypoint(name, position, finalColor, dimension = dimension)
 
         // Feedback to player with placement mode info
         val placementMode = if (usePlayerPosition) "at your location" else "at crosshair target"

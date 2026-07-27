@@ -111,11 +111,14 @@ object WaypointManager {
      * @param name The name of the waypoint
      * @param position The 3D position of the waypoint
      * @param color The color of the waypoint in RGB format (default: red)
-     * @param dimension The dimension of the waypoint (default: "minecraft:overworld")
+     * @param dimension The dimension id the waypoint belongs to (e.g. "minecraft:overworld").
+     *                  Required — pass the creating player's current dimension so cross-dimension
+     *                  teleport/navigation works. There is intentionally no default here to prevent
+     *                  silently mislabeling waypoints as overworld.
      * @param visible Whether the waypoint should be visible (default: true)
      * @return The newly created waypoint
      */
-    fun addWaypoint(name: String, position: Vec3, color: Int = 0xFF0000, dimension: String = "minecraft:overworld", visible: Boolean = true): Waypoint {
+    fun addWaypoint(name: String, position: Vec3, color: Int = 0xFF0000, dimension: String, visible: Boolean = true): Waypoint {
         val waypoint = Waypoint(name, SerializableVec3d(position.x, position.y, position.z), color, dimension, visible)
         return addWaypoint(waypoint)
     }

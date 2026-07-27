@@ -127,7 +127,8 @@ class WayfindrGui : Screen(Component.literal("Waypoint Manager")) {
                 if (player != null) {
                     val pos = player.position()
                     val name = "Waypoint ${WaypointManager.waypoints.size + 1}"
-                    WaypointManager.addWaypoint(name, pos)
+                    val dimension = player.level().dimension().identifier().toString()
+                    WaypointManager.addWaypoint(name, pos, dimension = dimension)
                     refreshWaypointList(RIGHT_PANE_Y)
                     selectWaypoint(WaypointManager.waypoints.last().id)
                 }
