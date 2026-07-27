@@ -130,9 +130,5 @@ class WayfindrConfigScreen(private val parent: Screen) : Screen(Component.litera
     override fun extractRenderState(context: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
         super.extractRenderState(context, mouseX, mouseY, delta)
         context.centeredText(font, title, width / 2, 12, 0xFFFFFFFF.toInt())
-
-        context.text(font,
-            Component.literal("Configure Wayfindr mod settings"),
-            width / 2 - 100, 26, 0xFFAAAAAA.toInt(), false)
     }
 }
