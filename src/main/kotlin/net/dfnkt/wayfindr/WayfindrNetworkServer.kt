@@ -14,7 +14,9 @@ import java.util.UUID
  */
 object WayfindrNetworkServer {
     private val logger = LoggerFactory.getLogger("wayfindr")
-    private val json = Json { prettyPrint = true }
+    // Compact (not pretty-printed): this JSON is encoded into network packets, so
+    // whitespace would be wasted bandwidth on every broadcast and join sync.
+    private val json = Json { ignoreUnknownKeys = true }
     
     // Server instance, set during initialization
     private var server: MinecraftServer? = null
@@ -42,7 +44,7 @@ object WayfindrNetworkServer {
         // Handler for adding a new waypoint from a client
         ServerPlayNetworking.registerGlobalReceiver(WayfindrNetworking.WaypointAddPayload.ID) { payload, context ->
             val jsonData = payload.data
-            logger.info("Received waypoint add request from ${context.player().name.string}: $jsonData")
+            logger.debug("Received waypoint add request from {}: {}", context.player().name.string, jsonData)
             
             context.server().execute {
                 try {
@@ -87,7 +89,7 @@ object WayfindrNetworkServer {
         // Handler for updating an existing waypoint from a client
         ServerPlayNetworking.registerGlobalReceiver(WayfindrNetworking.WaypointUpdatePayload.ID) { payload, context ->
             val jsonData = payload.data
-            logger.info("Received waypoint update request from ${context.player().name.string}: $jsonData")
+            logger.debug("Received waypoint update request from {}: {}", context.player().name.string, jsonData)
             
             context.server().execute {
                 try {

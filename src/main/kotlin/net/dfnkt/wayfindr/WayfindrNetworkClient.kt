@@ -24,7 +24,7 @@ object WayfindrNetworkClient {
             
             context.client().execute {
                 try {
-                    logger.info("Received waypoint sync data: $jsonData")
+                    logger.debug("Received waypoint sync data: {}", jsonData)
                     val serverWaypoints = json.decodeFromString<List<WaypointManager.Waypoint>>(jsonData)
                     logger.info("Received waypoint sync with ${serverWaypoints.size} waypoints")
 
@@ -68,7 +68,7 @@ object WayfindrNetworkClient {
             
             context.client().execute {
                 try {
-                    logger.info("Received waypoint add data: $jsonData")
+                    logger.debug("Received waypoint add data: {}", jsonData)
                     val waypoint = json.decodeFromString<WaypointManager.Waypoint>(jsonData)
                     logger.info("Adding waypoint from server: ${waypoint.name} (ID: ${waypoint.id}, Owner: ${waypoint.owner})")
                     
@@ -95,7 +95,7 @@ object WayfindrNetworkClient {
             
             context.client().execute {
                 try {
-                    logger.info("Received waypoint update data: $jsonData")
+                    logger.debug("Received waypoint update data: {}", jsonData)
                     val updatedWaypoint = json.decodeFromString<WaypointManager.Waypoint>(jsonData)
                     
                     // Use updateWaypoint method instead of directly modifying the list
