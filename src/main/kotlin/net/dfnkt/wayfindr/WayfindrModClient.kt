@@ -48,16 +48,22 @@ object WayfindrModClient : ClientModInitializer {
             // e.g. nether waypoints don't appear in the overworld at matching coords.
             val currentDimension = Minecraft.getInstance().player?.level()?.dimension()?.identifier()?.toString()
 
+            // Compare squared distances to avoid a sqrt per waypoint, and read the
+            // waypoint's raw coordinates directly to avoid allocating a Vec3 per
+            // waypoint every frame (matters at hundreds of waypoints).
+            val maxRenderSq = config.maxRenderDistance * config.maxRenderDistance
+
             for (waypoint in WaypointManager.waypoints) {
                 if (!waypoint.visible) continue
                 if (waypoint.dimension != currentDimension) continue
 
-                val waypointPos = waypoint.position.toVec3d()
-                val distance = cameraPos.distanceTo(waypointPos)
+                val wp = waypoint.position
+                val dx = wp.x - cameraPos.x
+                val dy = wp.y - cameraPos.y
+                val dz = wp.z - cameraPos.z
+                if (dx * dx + dy * dy + dz * dz > maxRenderSq) continue
 
-                if (distance <= config.maxRenderDistance) {
-                    WayfindrRenderer.renderWaypointMarker(poseStack, collector, cameraPos, waypointPos, waypoint.color)
-                }
+                WayfindrRenderer.renderWaypointMarker(poseStack, collector, cameraPos, wp.x, wp.y, wp.z, waypoint.color)
             }
         }
 

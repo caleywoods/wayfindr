@@ -44,21 +44,23 @@ object WaypointLabels {
         // coords would project onto the overworld (and vice versa).
         val currentDimension = client.player?.level()?.dimension()?.identifier()?.toString() ?: return
 
+        // Compare squared distances (no sqrt) and reuse a single scratch vector and the
+        // waypoint's raw coordinates to avoid per-waypoint allocations every frame.
+        val maxDistanceSq = maxDistance * maxDistance
+        val v = Vector4f()
+
         for (waypoint in WaypointManager.waypoints) {
             if (!waypoint.visible || waypoint.name.isEmpty()) continue
             if (waypoint.dimension != currentDimension) continue
 
-            val pos = waypoint.position.toVec3d()
-            val distance = cam.distanceTo(pos)
-            if (distance > maxDistance) continue
+            val pos = waypoint.position
+            val dx = pos.x - cam.x
+            val dy = pos.y - cam.y
+            val dz = pos.z - cam.z
+            if (dx * dx + dy * dy + dz * dz > maxDistanceSq) continue
 
             // World position relative to the camera, lifted a little above the beam base.
-            val v = Vector4f(
-                (pos.x - cam.x).toFloat(),
-                (pos.y - cam.y + 2.3).toFloat(),
-                (pos.z - cam.z).toFloat(),
-                1.0f
-            )
+            v.set(dx.toFloat(), (dy + 2.3).toFloat(), dz.toFloat(), 1.0f)
             view.transform(v)
             proj.transform(v)
 

@@ -28,7 +28,9 @@ class WayfindrRenderer {
             poseStack: PoseStack,
             collector: SubmitNodeCollector,
             cameraPos: Vec3,
-            waypointPos: Vec3,
+            waypointX: Double,
+            waypointY: Double,
+            waypointZ: Double,
             color: Int = 0xFF0000
         ) {
             val size = 0.5f
@@ -46,9 +48,9 @@ class WayfindrRenderer {
             // centered on the origin (x/z in [-size, size]), so this keeps the beam
             // centered on the waypoint — matching where the HUD name label is projected.
             poseStack.translate(
-                waypointPos.x - cameraPos.x,
-                waypointPos.y - cameraPos.y,
-                waypointPos.z - cameraPos.z
+                waypointX - cameraPos.x,
+                waypointY - cameraPos.y,
+                waypointZ - cameraPos.z
             )
 
             poseStack.scale(beamWidth, beamHeight, beamWidth)
